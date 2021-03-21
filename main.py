@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 intents = discord.Intents.all()
 intents.members = True
-prefix = 'cc '
+prefix = 'pp '
 
 load_dotenv()
 dTOKEN = os.getenv('dTOKEN')
