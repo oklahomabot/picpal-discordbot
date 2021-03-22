@@ -10,7 +10,7 @@ class admin(commands.Cog):
 
     @commands.command(aliases=['BOTINFO', 'BotInfo', 'bot_info', 'info'])
     async def botinfo(self, ctx):
-
+        '''General Information about PicPal'''
         embed = discord.Embed(
             title='🤖Bot Information🤖', colour=discord.Colour.blue(), timestamp=datetime.now(tz=timezone.utc))
 
@@ -26,13 +26,30 @@ class admin(commands.Cog):
         except:
             owner_id = 'Not defined in commands.Bot.owner_id'
 
-        fields = [("Name - prefix", f'{self.client.user.name} - \"{self.client.command_prefix}\"', False),
+        fields = [("Name - prefix", f'{self.client.user.name} - \"{self.client.command_prefix}\"', True),
                   (":trophy: Owner", owner_id, True),
                   ('🦮Serving ', f'{mh} users / {len(list(self.client.guilds))} servers',
-                   True), ("Favorite Cookbook", "Serving Humans", True),
+                   True), ("Favorite Movie", "Terminator", True),
                   ("⛭GitHub",
                    "[GitHub LINK](https://github.com/oklahomabot/picpal-discordbot)", True),
                   ("📝Invite me", "[Click Here to Add Me](https://discord.com/api/oauth2/authorize?client_id=822991442154750033&permissions=2684873792&scope=bot)", True)]
+        for name, value, inline in fields:
+            embed.add_field(name=name, value=value, inline=inline)
+
+        embed.set_footer(
+            text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=['erase'], hidden=True)
+    async def purge(self, ctx, num=2):
+        'Admin delete'
+        if ctx.author.id == self.client.owner_id:
+            await ctx.channel.purge(limit=num+1)
+        else:
+            if ctx.author.id == 793433316258480128:
+                await ctx.send('Not for you **sniper** :smile:')
+            else:
+                await ctx.send("I don\'t feel compliant right now")
 
 
 def setup(client):  # Cog setup command
