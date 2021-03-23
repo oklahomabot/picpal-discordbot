@@ -1,0 +1,5 @@
+# Delete this line and replace numbers with your values
+# Rename this file .env and save in same directory as your main.py
+OwnerID=790459209820930493
+dTOKEN=ODA0MDAyMjA2YOsrSbspE1iPOfauwNC0
+PIXABAY_API_KEY=20371977-4468898e566f7fe80d03f12fc
