@@ -6,6 +6,7 @@ import shutil
 from discord.ext import commands
 from dotenv import load_dotenv
 from random import randint
+from datetime import datetime, timezone
 
 
 class api_images(commands.Cog):
@@ -41,7 +42,6 @@ class api_images(commands.Cog):
         Trigger someone, it is fun!
         This command uses some-random-API interface to retrieve image
         '''
-        await ctx.send(f'Do not forget about karma {ctx.author.name} ...')
 
         user = await get_guild_member(ctx, user)
 
@@ -53,17 +53,50 @@ class api_images(commands.Cog):
         if response.status_code != 200:
             await ctx.send('Well ... that did not work for some reason.')
             return
-
         # Set decode_content value to True, otherwise the downloaded image file's size will be zero.
         response.raw.decode_content = True
-
         out_path = os.path.join('./', 'cogs', 'gifs',
                                 'somerandomAPI', (f'output.gif'))
         with open(out_path, 'wb+') as out_file:
             shutil.copyfileobj(response.raw, out_file)
         del response
 
-        await ctx.send(file=discord.File(out_path))
+        await ctx.send(f'Do not forget about karma {ctx.author.name} ...', file=discord.File(out_path))
+
+    @commands.command(aliases=['ani'], hidden=False)
+    async def animu(self, ctx, *, category=None):
+        '''View an animu in category wink, hug, pat or face-palm'''
+
+        if category == 'face palm':
+            category = 'face-palm'
+
+        valid_cats = ['wink', 'hug', 'pat', 'face-palm']
+        if category not in valid_cats:
+            text = f'Please try again selecting a category ex) \"{self.client.command_prefix}animu hug\"\n'
+            text = text + 'Valid categories are **'
+            text = text + \
+                "** , **".join(valid_cats[:-1]) + f' and {valid_cats[-1]}**'
+            await ctx.send(text)
+            return
+
+        url = f'https://some-random-api.ml/animu/{category}'
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            await ctx.send(f"Something happened, I couldn\'t get your image {ctx.author.display_name} :(")
+            return
+
+        embed = discord.Embed(
+            title=f"**{category}** Animu Image", colour=discord.Colour(0xE5E242),
+            description=f"image provided by [some-random-API.ml](https://some-random-API.ml/)",
+            timestamp=datetime.now(tz=timezone.utc))
+        embed.set_image(url=response.json()['link'])
+        embed.set_thumbnail(url=self.client.user.avatar_url_as(size=64))
+        embed.set_footer(
+            text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+
+# HELPER FUNCTIONS
 
 
 async def get_guild_member(ctx, user=None):
