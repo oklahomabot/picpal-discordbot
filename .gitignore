@@ -133,4 +133,4 @@ junk.py
 test.py
 *.ipynb
 snippets/
-output.*
+/output.*
