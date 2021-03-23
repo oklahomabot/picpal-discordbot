@@ -168,6 +168,46 @@ class custom_images(commands.Cog):
 
         return
 
+    @commands.command(aliases=['washer', 'clean'], hidden=False)
+    async def wash(self, ctx, *, user=None):
+        '''
+        Clean yourself or your dirty friends
+        Returns gif image using mentioned user
+        '''
+
+        user = await get_guild_member(ctx, user)
+
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar = im.copy()
+        sized_avatar = resize_avatar(avatar, (125, 125), rot=0)
+
+        folder = os.path.join('./', 'cogs', 'gifs', 'wash')
+
+        # white background with sized logo pasted onto it
+        # sized to match washer images (335,371) pixels
+        whitepic = Image.new('RGBA', (335, 371), (255, 255, 255, 255))
+        whitepic.alpha_composite(sized_avatar, dest=(100, 150))
+
+        # tframe.png images have had whitespace made transparent
+        # This allows avatar image to appear behind washer image
+        frames = []
+        for frame_num in range(4):
+            filename = f'tframe_{frame_num:02}.png'
+            im = Image.open(os.path.join(folder, 'frames', filename))
+            overlay = im.copy()
+            whitepic.alpha_composite(overlay)
+            frames.append(whitepic.copy())
+
+        # Assemble and publish animated gif
+        out_file = os.path.join(folder, 'output.gif')
+        frames[0].save(out_file, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=300, loop=0, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
