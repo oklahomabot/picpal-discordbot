@@ -129,6 +129,67 @@ class images(commands.Cog):
 
         return
 
+    @commands.command(aliases=['BEER'], hidden=False)
+    async def beer(self, ctx, *, user=None):
+        '''
+        Enjoy a brew with a friend
+        Returns gif image using mentioned user
+        '''
+
+        user = await get_guild_member(ctx, user)
+
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar = im.copy()
+
+        asset = ctx.author.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar_author = im.copy()
+
+        parameters = []
+        parameters_author = []
+
+        for _ in range(5):
+            parameters.append((10, (120, 120), (302, 170)))
+            parameters_author.append((350, (120, 120), (85, 170)))
+
+        parameters[1] = (10, (120, 120), (293, 170))
+        parameters[2] = (10, (120, 120), (282, 170))
+        parameters[3] = (10, (120, 120), (282, 170))
+        parameters[4] = (10, (120, 120), (294, 170))
+
+        parameters_author[1] = ((350, (120, 120), (89, 170)))
+        parameters_author[2] = ((350, (120, 120), (100, 170)))
+        parameters_author[3] = ((350, (120, 120), (100, 170)))
+        parameters_author[4] = ((350, (120, 120), (89, 170)))
+
+        folder = os.path.join('./', 'cogs', 'gifs', 'beer')
+        frame_folder = os.path.join(folder, 'frames')
+        frames = []
+        for frame_name in os.listdir(frame_folder):
+            if frame_name == 'backup_frames':
+                continue
+
+            frame_num = int(frame_name.split("_")[1][:2])
+            im = Image.open(os.path.join(frame_folder, frame_name))
+            background = im.copy()
+            temp_img = (paste_for_gif(background, avatar,
+                                      rot=parameters[frame_num][0], size=parameters[frame_num][1],
+                                      paste_loc=parameters[frame_num][2]))
+            frames.append(paste_for_gif(temp_img, avatar_author,
+                                        rot=parameters_author[frame_num][0], size=parameters_author[frame_num][1],
+                                        paste_loc=parameters_author[frame_num][2]))
+
+        # Assemble and publish animated gif
+        out_file = os.path.join(folder, 'output.gif')
+        frames[0].save(out_file, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=90, loop=0, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
