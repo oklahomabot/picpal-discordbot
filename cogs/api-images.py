@@ -2,6 +2,7 @@ import os
 import discord
 import requests
 import urllib.parse
+import shutil
 from discord.ext import commands
 from dotenv import load_dotenv
 from random import randint
@@ -33,6 +34,49 @@ class api_images(commands.Cog):
         embed.set_author(name=ctx.author, icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=['Trigger', 'TRIGGER'], hidden=False)
+    async def trigger(self, ctx, *, user=None):
+        '''
+        Trigger someone, it is fun!
+        This command uses some-random-API interface to retrieve image
+        '''
+        await ctx.send(f'Do not forget about karma {ctx.author.name} ...')
+
+        user = await get_guild_member(ctx, user)
+
+        getVars = {'avatar': user.avatar_url_as(format='png')}
+        url = f'https://some-random-api.ml/canvas/triggered/?'
+        response = requests.get(
+            url + urllib.parse.urlencode(getVars), stream=True)
+
+        if response.status_code != 200:
+            await ctx.send('Well ... that did not work for some reason.')
+            return
+
+        # Set decode_content value to True, otherwise the downloaded image file's size will be zero.
+        response.raw.decode_content = True
+
+        out_path = os.path.join('./', 'cogs', 'gifs',
+                                'somerandomAPI', (f'output.gif'))
+        with open(out_path, 'wb+') as out_file:
+            shutil.copyfileobj(response.raw, out_file)
+        del response
+
+        await ctx.send(file=discord.File(out_path))
+
+
+async def get_guild_member(ctx, user=None):
+    # Convert user to user or member / use author
+    if user:
+        try:
+            user = await commands.converter.MemberConverter().convert(ctx, user)
+        except:
+            await ctx.send(f"I don\'t know {user}, lets just use your avatar ...")
+            user = ctx.author
+    else:
+        user = ctx.author
+    return user
 
 
 async def pixabay_url_search(ctx, search_by=None):

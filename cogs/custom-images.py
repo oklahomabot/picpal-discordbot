@@ -84,7 +84,7 @@ class custom_images(commands.Cog):
         im = Image.open(data)
         avatar = im.copy()
 
-        parameters = dunk_parameter_list()
+        parameters = dunk_paste_info()
         folder = os.path.join('./', 'cogs', 'gifs', 'dunk')
         frame_folder = os.path.join(folder, 'frames')
         frames = []
@@ -209,39 +209,36 @@ async def get_guild_member(ctx, user=None):
     return user
 
 
-def dunk_parameter_list():
+def dunk_paste_info():
     return_list = []
-    for _ in range(28):
-        return_list.append((0, (50, 50), (199, 150)))
-
-    return_list[1] = (0, (50, 50), (199, 170))
-    return_list[2] = (0, (50, 50), (199, 191))
-    return_list[3] = (0, (50, 50), (199, 236))
-    return_list[4] = (0, (50, 50), (199, 211))
-    return_list[5] = (0, (50, 50), (199, 178))
-    return_list[6] = (0, (50, 50), (199, 152))
-    return_list[7] = (0, (50, 50), (199, 170))
-    return_list[8] = (0, (50, 50), (199, 211))
-    return_list[9] = (0, (50, 50), (199, 236))
-    return_list[10] = (0, (50, 50), (199, 210))
-    return_list[11] = (0, (50, 50), (199, 160))
-    return_list[12] = (0, (50, 50), (203, 142))
-    return_list[13] = (0, (50, 50), (203, 159))
-    return_list[14] = (0, (50, 50), (203, 211))
-    return_list[15] = (0, (50, 50), (203, 222))
-    return_list[16] = (0, (50, 50), (203, 209))
-    return_list[17] = (0, (50, 50), (203, 178))
-    return_list[18] = (0, (50, 50), (203, 150))
-    return_list[19] = (0, (50, 50), (203, 142))
-    return_list[20] = (0, (50, 50), (203, 131))
-    return_list[21] = (0, (50, 50), (213, 95))
-    return_list[22] = (0, (50, 50), (218, 35))
-    return_list[23] = (0, (50, 50), (223, 0))
-    return_list[24] = (0, (50, 50), (223, 0))
-    return_list[25] = (0, (50, 50), (230, 0))
-    return_list[26] = (0, (50, 50), (275, 71))
-    return_list[27] = (0, (50, 50), (275, 165))
-
+    return_list.append((0, (50, 50), (199, 150)))
+    return_list.append((0, (50, 50), (199, 170)))
+    return_list.append((0, (50, 50), (199, 191)))
+    return_list.append((0, (50, 50), (199, 236)))
+    return_list.append((0, (50, 50), (199, 211)))
+    return_list.append((0, (50, 50), (199, 178)))
+    return_list.append((0, (50, 50), (199, 152)))
+    return_list.append((0, (50, 50), (199, 170)))
+    return_list.append((0, (50, 50), (199, 211)))
+    return_list.append((0, (50, 50), (199, 236)))
+    return_list.append((0, (50, 50), (199, 210)))
+    return_list.append((0, (50, 50), (199, 160)))
+    return_list.append((0, (50, 50), (203, 142)))
+    return_list.append((0, (50, 50), (203, 159)))
+    return_list.append((0, (50, 50), (203, 211)))
+    return_list.append((0, (50, 50), (203, 222)))
+    return_list.append((0, (50, 50), (203, 209)))
+    return_list.append((0, (50, 50), (203, 178)))
+    return_list.append((0, (50, 50), (203, 150)))
+    return_list.append((0, (50, 50), (203, 142)))
+    return_list.append((0, (50, 50), (203, 131)))
+    return_list.append((0, (50, 50), (213, 95)))
+    return_list.append((0, (50, 50), (218, 35)))
+    return_list.append((0, (50, 50), (223, 0)))
+    return_list.append((0, (50, 50), (223, 0)))
+    return_list.append((0, (50, 50), (230, 0)))
+    return_list.append((0, (50, 50), (275, 71)))
+    return_list.append((0, (50, 50), (275, 165)))
     return return_list
 
 
