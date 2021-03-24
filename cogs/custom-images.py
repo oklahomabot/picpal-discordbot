@@ -185,22 +185,25 @@ class custom_images(commands.Cog):
 
         folder = os.path.join('./', 'cogs', 'gifs', 'wash')
 
-        # white background with sized logo pasted onto it
         # sized to match washer images (335,371) pixels
         whitepic = Image.new('RGBA', (335, 371), (255, 255, 255, 255))
-        whitepic.alpha_composite(sized_avatar, dest=(100, 150))
 
-        # tframe.png images have had whitespace made transparent
-        # This allows avatar image to appear behind washer image
+        # 16 images - avatar rotated each image
         frames = []
-        for frame_num in range(4):
-            filename = f'tframe_{frame_num:02}.png'
-            im = Image.open(os.path.join(folder, 'frames', filename))
-            overlay = im.copy()
-            whitepic.alpha_composite(overlay)
-            frames.append(whitepic.copy())
+        rot = 360
+        for _ in range(4):
+            for frame_num in range(4):
+                spin = -55 if frame_num in [0, 2] else 10
+                rot += spin
+                background = whitepic.copy()
+                background.alpha_composite(
+                    sized_avatar.rotate(rot), dest=(100, 150))
+                frame_name = f'tframe_{frame_num:02}.png'
+                im = Image.open(os.path.join(folder, 'frames', frame_name))
+                washer_img = im.copy()
+                background.alpha_composite(washer_img)
+                frames.append(background.copy())
 
-        # Assemble and publish animated gif
         out_file = os.path.join(folder, 'output.gif')
         frames[0].save(out_file, save_all=True, append_images=frames[1:],
                        optimize=True, duration=300, loop=0, interlace=True, disposal=2)
