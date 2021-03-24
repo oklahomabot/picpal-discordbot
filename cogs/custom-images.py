@@ -1,10 +1,6 @@
 import os
 import discord
-import requests
-import urllib.parse
 from discord.ext import commands
-from dotenv import load_dotenv
-from random import randint
 from PIL import Image, ImageDraw
 from io import BytesIO
 
@@ -38,6 +34,7 @@ class custom_images(commands.Cog):
         data = BytesIO(await asset.read())
         im = Image.open(data)
         avatar = im.copy()
+        avatar = make_RGBA(avatar)
 
         parameters = [(300, (100, 100), (50, 300)),
                       (0, (100, 100), (50, 300)),
@@ -83,6 +80,7 @@ class custom_images(commands.Cog):
         data = BytesIO(await asset.read())
         im = Image.open(data)
         avatar = im.copy()
+        avatar = make_RGBA(avatar)
 
         parameters = dunk_paste_info()
         folder = os.path.join('./', 'cogs', 'gifs', 'dunk')
@@ -120,15 +118,16 @@ class custom_images(commands.Cog):
         data = BytesIO(await asset.read())
         im = Image.open(data)
         avatar = im.copy()
+        avatar = make_RGBA(avatar)
 
         asset = ctx.author.avatar_url_as(static_format='png')
         data = BytesIO(await asset.read())
         im = Image.open(data)
         avatar_author = im.copy()
+        avatar_author = make_RGBA(avatar_author)
 
         parameters = []
         parameters_author = []
-
         for _ in range(5):
             parameters.append((10, (120, 120), (302, 170)))
             parameters_author.append((350, (120, 120), (85, 170)))
@@ -181,6 +180,8 @@ class custom_images(commands.Cog):
         data = BytesIO(await asset.read())
         im = Image.open(data)
         avatar = im.copy()
+        avatar = make_RGBA(avatar)
+
         sized_avatar = resize_avatar(avatar, (125, 125), rot=0)
 
         folder = os.path.join('./', 'cogs', 'gifs', 'wash')
@@ -285,5 +286,15 @@ def dunk_paste_info():
     return return_list
 
 
+def make_RGBA(im):
+    if im.mode == 'RGBA':
+        return im
+    im = im.convert('RGBA')
+    im.putalpha(255)
+    return im
+
+
 def setup(client):  # Cog setup command
     client.add_cog(custom_images(client))
+
+# convert avatar : Fix .gif avatar problem / immediate return if mode is RGBA?
