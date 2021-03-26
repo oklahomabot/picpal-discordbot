@@ -3,6 +3,7 @@ import discord
 from discord.ext import commands
 from PIL import Image, ImageDraw
 from io import BytesIO
+from random import randint
 
 
 class custom_images(commands.Cog):
@@ -212,6 +213,69 @@ class custom_images(commands.Cog):
 
         return
 
+    @commands.command(aliases=['ttt', 'tic_tac_toe'], hidden=True)
+    async def tictactoe(self, ctx, *, user=None):
+        '''
+        Generates a radom game of Tic Tac Toe with whoever you want
+        '''
+
+        try:
+            user = await commands.converter.MemberConverter().convert(ctx, user)
+        except:
+            text = (("How about you pretend to mention another user and I pretend to make your game?") +
+                    (f"\nTry mentioning a member of {ctx.guild.name} ... or don\'t."))
+            await ctx.send(text)
+            return
+
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar = im.copy()
+        avatar = make_RGBA(avatar)
+        avatar = resize_avatar(avatar, (150, 150), rot=0)
+
+        asset = ctx.author.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar_author = im.copy()
+        avatar_author = make_RGBA(avatar_author)
+        avatar_author = resize_avatar(avatar_author, (150, 150), rot=0)
+
+        folder = os.path.join("./", "cogs", 'gifs', 'tictactoe')
+        im = Image.open(os.path.join(folder, "blank_board.png"))
+        background = im.copy()
+
+        plays_first = randint(1, 2)  # author is player 1 or player 2
+        avatars = []
+        if plays_first == 1:
+            avatars.extend([avatar_author, avatar])
+        else:
+            avatars.extend([avatar, avatar_author])
+
+        paste_loc = [(40, 40), (230, 40), (420, 40), (40, 230), (230, 230),
+                     (420, 230), (40, 420), (230, 420), (420, 420)]
+
+        result, final_board, frames = random_tictactoe(
+            avatars, background, paste_loc)
+
+        if result == 'tie':
+            output_text = 'No Winner, game is a tie'
+        else:
+            if (result == 1 and plays_first == 1) or (result == 2 and plays_first == 2):
+                winner_name = ctx.author.display_name
+            else:
+                winner_name = user.display_name
+            output_text = (f'{winner_name} is the winner!')
+
+        out_file = os.path.join(folder, "output.gif")
+        frames[0].save(out_file, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=1000, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(out_file))
+
+        await ctx.send(output_text)
+
+        return
+
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
@@ -294,7 +358,57 @@ def make_RGBA(im):
     return im
 
 
+def all_match(my_list, val):
+    result = True if my_list.count(val) == len(my_list) else False
+    return result
+
+
+def tictactoe_winner(board):
+    '''Returns False if no winner, tie or player_num'''
+    lines = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7],
+             [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
+    for player_num in [1, 2]:
+        for line in lines:
+            if all_match([board[line[0]-1], board[line[1]-1], board[line[2]-1]], player_num):
+                return player_num
+
+    # check for full tictactoe board
+    return False if 0 in board else 'tie'
+
+
+def tictactoe_string(board):
+    temp = ''
+    for row in range(3):
+        for col in range(3):
+            temp = temp+f'{board[row*3+col]}'
+            if col == 2:
+                temp = temp+'\n'
+            else:
+                temp = temp+'|'
+    return temp
+
+
+def random_tictactoe(avatars, background, paste_loc):
+    board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    empty_spaces = [x+1 for x in range(9)]
+    player_num = 1
+    game_result = False
+    img_frames = []
+    tmp_img = background.copy()
+    img_frames.append(tmp_img)
+    while game_result == False:
+        choice = empty_spaces.pop(randint(0, len(empty_spaces)-1))
+        board[choice-1] = player_num
+        background.alpha_composite(
+            avatars[player_num-1], dest=paste_loc[choice-1])
+        tmp_img = background.copy()
+        img_frames.append(tmp_img)
+
+        player_num = 1 if player_num == 2 else 2
+        game_result = tictactoe_winner(board)
+
+    return game_result, board, img_frames
+
+
 def setup(client):  # Cog setup command
     client.add_cog(custom_images(client))
-
-# convert avatar : Fix .gif avatar problem / immediate return if mode is RGBA?
