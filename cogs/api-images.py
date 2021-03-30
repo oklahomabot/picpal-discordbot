@@ -5,6 +5,7 @@ import requests
 import urllib.parse
 import shutil
 import json
+import asyncio
 from discord.ext import commands
 from random import randint
 from datetime import datetime, timezone
@@ -219,7 +220,7 @@ class api_images(commands.Cog):
         template_id = find_imgflip_id_using_alias(ctx.invoked_with)
 
         url = get_imgflip(template_id, text0, text1)
-        print(f'Command make_meme url={url}')
+        # print(f'Command make_meme url={url}')
         if not url:
             await ctx.send(f"Something happened, I couldn\'t get your image {ctx.author.display_name} :(")
             return
@@ -230,6 +231,79 @@ class api_images(commands.Cog):
         embed.set_footer(
             text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
+
+    @commands.command(aliases=['memelist', 'memeslist' 'listmeme', 'listmemes', 'list_memes'])
+    async def meme_list(self, ctx):
+
+        imgflip_dic = get_imgflip_dic()
+
+        # find proper reference to command.prefix
+        pre = self.client.command_prefix
+        title = 'MEME GENERATOR COMMANDS'
+        description = '[List of Top 100 imgflip memes](https://imgflip.com/popular_meme_ids)'
+
+        pages_needed = len(imgflip_dic)//10
+        if len(imgflip_dic) % 10 != 0:
+            pages_needed += 1
+
+        embed_list = []
+        for pagenum in range(pages_needed):
+            temp_embed = discord.Embed(
+                title=title, description=description, colour=discord.Colour.blue())
+            temp_embed.set_footer(
+                text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
+            embed_list.append(temp_embed)
+
+        for index, meme in enumerate(imgflip_dic.keys()):
+            temp_str = 'Aliases- '+','.join(imgflip_dic[meme]['aliases'])
+            embed_list[index //
+                       10].add_field(name=f'#{imgflip_dic[meme]["rank"]} '+imgflip_dic[meme]['full_name'], value=temp_str, inline=False)
+
+        pages = pages_needed
+        cur_page = 1
+        message = await ctx.send(f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
+        await message.add_reaction("◀️")
+        await message.add_reaction("▶️")
+        await message.add_reaction("⏹️")
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️", "⏹️"]
+            # This makes sure nobody except the command sender can interact with the "menu"
+
+        while True:
+
+            reaction, user = await self.client.wait_for("reaction_add", check=check)
+            # waiting for a reaction to be added - times out after x seconds, 60 in this
+            # example
+
+            if str(reaction.emoji) == "▶️":
+                if cur_page == pages:
+                    cur_page = 1
+                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
+                    await message.remove_reaction(reaction, user)
+                else:
+
+                    cur_page += 1
+                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
+                    await message.remove_reaction(reaction, user)
+
+            elif str(reaction.emoji) == "◀️":
+                if cur_page == 1:
+                    cur_page = pages
+                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
+                    await message.remove_reaction(reaction, user)
+                else:
+
+                    cur_page -= 1
+                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
+                    await message.remove_reaction(reaction, user)
+
+            elif str(reaction.emoji) == "⏹️":
+                await message.edit(content='Process Stopped!', embed=None)
+                await asyncio.sleep(10)
+                await message.delete()
+                await ctx.message.delete()
+                return
 
 
 def setup(client):  # Cog setup command
