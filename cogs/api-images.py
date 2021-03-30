@@ -233,7 +233,11 @@ class api_images(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['memelist', 'memeslist' 'listmeme', 'listmemes', 'list_memes'])
-    async def meme_list(self, ctx):
+    async def meme_list(self, ctx, fields_per_page: int = 5):
+
+        if fields_per_page not in [5, 6, 7, 8, 9, 10]:
+            await(ctx.send('fields_per_page set to 5 (must be 5-10)'))
+            fields_per_page = 5
 
         imgflip_dic = get_imgflip_dic()
 
@@ -242,8 +246,8 @@ class api_images(commands.Cog):
         title = 'MEME GENERATOR COMMANDS'
         description = '[List of Top 100 imgflip memes](https://imgflip.com/popular_meme_ids)'
 
-        pages_needed = len(imgflip_dic)//10
-        if len(imgflip_dic) % 10 != 0:
+        pages_needed = len(imgflip_dic)//fields_per_page
+        if len(imgflip_dic) % fields_per_page != 0:
             pages_needed += 1
 
         embed_list = []
@@ -257,7 +261,7 @@ class api_images(commands.Cog):
         for index, meme in enumerate(imgflip_dic.keys()):
             temp_str = 'Aliases- '+','.join(imgflip_dic[meme]['aliases'])
             embed_list[index //
-                       10].add_field(name=f'#{imgflip_dic[meme]["rank"]} '+imgflip_dic[meme]['full_name'], value=temp_str, inline=False)
+                       fields_per_page].add_field(name=f'#{imgflip_dic[meme]["rank"]} '+imgflip_dic[meme]['full_name'], value=temp_str, inline=False)
 
         pages = pages_needed
         cur_page = 1
@@ -272,9 +276,14 @@ class api_images(commands.Cog):
 
         while True:
 
-            reaction, user = await self.client.wait_for("reaction_add", check=check)
-            # waiting for a reaction to be added - times out after x seconds, 60 in this
-            # example
+            try:
+                reaction, user = await self.client.wait_for("reaction_add", timeout=60.0, check=check)
+            except:
+                await message.edit(content='Timeout', embed=None)
+                await asyncio.sleep(10)
+                await message.delete()
+                await ctx.message.delete()
+                return
 
             if str(reaction.emoji) == "▶️":
                 if cur_page == pages:
@@ -282,22 +291,18 @@ class api_images(commands.Cog):
                     await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
                     await message.remove_reaction(reaction, user)
                 else:
-
                     cur_page += 1
                     await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
                     await message.remove_reaction(reaction, user)
-
             elif str(reaction.emoji) == "◀️":
                 if cur_page == 1:
                     cur_page = pages
                     await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
                     await message.remove_reaction(reaction, user)
                 else:
-
                     cur_page -= 1
                     await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
                     await message.remove_reaction(reaction, user)
-
             elif str(reaction.emoji) == "⏹️":
                 await message.edit(content='Process Stopped!', embed=None)
                 await asyncio.sleep(10)
