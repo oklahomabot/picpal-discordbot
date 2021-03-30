@@ -213,10 +213,10 @@ class custom_images(commands.Cog):
 
         return
 
-    @commands.command(aliases=['ttt', 'tic_tac_toe'], hidden=True)
+    @commands.command(aliases=['ttt', 'tic_tac_toe'], hidden=False)
     async def tictactoe(self, ctx, *, user=None):
         '''
-        Generates a radom game of Tic Tac Toe with whoever you want
+        Generates a radom game of Tic Tac Toe with whomever you want
         '''
 
         try:
