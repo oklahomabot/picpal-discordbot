@@ -79,7 +79,8 @@ def get_imgflip_dic():
                   'description': 'distracted bf, guy checking out another girl' 
                   'aliases': ['DistractedBoyfriend']}}
     '''
-    data_file = os.path.join('./', 'cogs\gifs\imgflip', 'imgfliptop100.txt')
+    data_file = os.path.join('./', 'cogs', 'gifs',
+                             'imgflip', 'imgfliptop100.txt')
     with open(data_file) as json_file:
         return_dic = json.load(json_file)
     return return_dic
@@ -92,7 +93,8 @@ def save_imgflip_aliases(template_id, alias_list):
             f'COG api-images save_imgflip_aliases : Saving empty aliases list for {template_id}')
     temp_dic = get_imgflip_dic()
     temp_dic[str(template_id)]['aliases'] = alias_list
-    data_file = os.path.join('./', 'cogs\gifs\imgflip', 'imgfliptop100.txt')
+    data_file = os.path.join('./', 'cogs', 'gifs',
+                             'imgflip', 'imgfliptop100.txt')
     with open(data_file, 'w+') as outfile:
         json.dump(temp_dic, outfile)
     return
@@ -224,19 +226,20 @@ class api_images(commands.Cog):
         if not url:
             await ctx.send(f"Something happened, I couldn\'t get your image {ctx.author.display_name} :(")
             return
-        embed = discord.Embed(
-            title='MEME Generator', description=f'{ctx.invoked_with}', timestamp=datetime.now(tz=timezone.utc))
+        embed = discord.Embed(title=f"{ctx.author.display_name}\'s MEME",
+                              description=f"provided by [imgflip.com\'s API](https://imgflip.com/)",
+                              colour=discord.Colour.blue())
         embed.set_image(url=get_imgflip(template_id, text0, text1))
-        embed.set_thumbnail(url=self.client.user.avatar_url_as(size=64))
-        embed.set_footer(
-            text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
+        embed.set_thumbnail(url=ctx.author.avatar_url_as(size=64))
+        embed.set_footer(text=f'Type \"{self.client.command_prefix}meme_list\" for available memes',
+                         icon_url=self.client.user.avatar_url)
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['memelist', 'memeslist' 'listmeme', 'listmemes', 'list_memes'])
     async def meme_list(self, ctx, fields_per_page: int = 5):
 
-        if fields_per_page not in [5, 6, 7, 8, 9, 10]:
-            await(ctx.send('fields_per_page set to 5 (must be 5-10)'))
+        if fields_per_page not in [3, 4, 5, 6, 7, 8, 9, 10]:
+            await(ctx.send('fields_per_page set to 5 (must be 3-10)'))
             fields_per_page = 5
 
         imgflip_dic = get_imgflip_dic()
@@ -254,8 +257,10 @@ class api_images(commands.Cog):
         for pagenum in range(pages_needed):
             temp_embed = discord.Embed(
                 title=title, description=description, colour=discord.Colour.blue())
+            temp_embed.set_thumbnail(
+                url=self.client.user.avatar_url_as(size=64))
             temp_embed.set_footer(
-                text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
+                text=f'Make meme by typing \"{self.client.command_prefix}<alias> <text1>+<text2>\"', icon_url=ctx.author.avatar_url)
             embed_list.append(temp_embed)
 
         for index, meme in enumerate(imgflip_dic.keys()):
@@ -279,10 +284,10 @@ class api_images(commands.Cog):
             try:
                 reaction, user = await self.client.wait_for("reaction_add", timeout=60.0, check=check)
             except:
-                await message.edit(content='Timeout', embed=None)
-                await asyncio.sleep(10)
-                await message.delete()
-                await ctx.message.delete()
+                # await message.edit(content='Timed Out', embed=None)
+                # await asyncio.sleep(10)
+                # await message.delete()
+                # await ctx.message.delete()
                 return
 
             if str(reaction.emoji) == "▶️":
@@ -304,7 +309,7 @@ class api_images(commands.Cog):
                     await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
                     await message.remove_reaction(reaction, user)
             elif str(reaction.emoji) == "⏹️":
-                await message.edit(content='Process Stopped!', embed=None)
+                await message.edit(content='Process Stopped! Deleting Message', embed=None)
                 await asyncio.sleep(10)
                 await message.delete()
                 await ctx.message.delete()
