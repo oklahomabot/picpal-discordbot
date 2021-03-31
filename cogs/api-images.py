@@ -260,11 +260,11 @@ class api_images(commands.Cog):
             temp_embed.set_thumbnail(
                 url=self.client.user.avatar_url_as(size=64))
             temp_embed.set_footer(
-                text=f'Make meme by typing \"{self.client.command_prefix}<alias> <text1>+<text2>\"', icon_url=ctx.author.avatar_url)
+                text=f'Make meme by typing \"{self.client.command_prefix}<command> <text1>+<text2>\"', icon_url=ctx.author.avatar_url)
             embed_list.append(temp_embed)
 
         for index, meme in enumerate(imgflip_dic.keys()):
-            temp_str = 'Aliases- '+','.join(imgflip_dic[meme]['aliases'])
+            temp_str = ' '.join(imgflip_dic[meme]['aliases'])
             embed_list[index //
                        fields_per_page].add_field(name=f'#{imgflip_dic[meme]["rank"]} '+imgflip_dic[meme]['full_name'], value=temp_str, inline=False)
 
