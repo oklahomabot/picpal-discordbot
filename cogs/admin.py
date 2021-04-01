@@ -15,7 +15,7 @@ class admin(commands.Cog):
             return
         timestamp = datetime.now(tz=timezone.utc)
         print(
-            f'{timestamp} User {ctx.message.author.display_name} in guild {ctx.guild.name} sent {ctx.message.content}')
+            f'{timestamp[:17]} User {ctx.message.author.display_name} in guild {ctx.guild.name} sent {ctx.message.content}')
 
     @commands.command(aliases=['BOTINFO', 'BotInfo', 'bot_info', 'info'])
     async def botinfo(self, ctx):
@@ -60,12 +60,9 @@ class admin(commands.Cog):
     @commands.command(aliases=['cmdcount', 'cmd_count'], hidden=False)
     async def command_count(self, ctx):
         '''Returns current number of bot commands'''
-        commands_desc = ''
         alias_count = 0
         for command in self.client.commands:
-            commands_desc += f'{command}(+{len(command.aliases)} aliases) '
             alias_count += len((command.aliases))+1
-
         await ctx.send((f'I process {len(self.client.commands)+alias_count} commands total.\n') +
                        (f'{len(self.client.commands)} command functions + {alias_count} aliases'))
 
