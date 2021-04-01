@@ -51,6 +51,16 @@ class admin(commands.Cog):
             else:
                 await ctx.send("I don\'t feel compliant right now")
 
+    @commands.command(aliases=['cmdcount', 'cmd_count'], hidden=False)
+    async def commands(self, ctx):
+
+        commands_desc = ''
+        '''
+        for command in self.client.commands:
+            commands_desc += f'{command.name} - {command.help}\n'
+        '''
+        await ctx.send(f'I have {len(self.client.commands)} total commands.')
+
 
 def setup(client):  # Cog setup command
     client.add_cog(admin(client))

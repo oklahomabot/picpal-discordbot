@@ -15,6 +15,24 @@ load_dotenv()
 # HELPER FUNCTIONS
 
 
+def replace_imgflip_dic(my_dic):
+    data_path = os.path.join('./', 'cogs', 'gifs',
+                             'imgflip', 'imgfliptop100.txt')
+
+    with open(data_path, 'w+') as outfile:
+        json.dump(my_dic, outfile)
+    return
+
+
+def extend_unique_items(old_list, extra_list):
+    new_list = old_list.copy()
+    for item in extra_list:
+        if item not in new_list:
+            new_list.append(item)
+
+    return new_list
+
+
 async def get_guild_member(ctx, user=None):
     # Convert user to user or member / use author
     if user:
@@ -314,6 +332,40 @@ class api_images(commands.Cog):
                 await message.delete()
                 await ctx.message.delete()
                 return
+
+    @commands.command(aliases=['add', 'add_cmd', 'addcmd'], hidden=False)
+    async def add_meme_command(self, ctx, meme_cmd, *, message=None):
+        my_info = await self.client.application_info()
+        if ctx.author != my_info.owner:
+            await ctx.send('NO :smile:')
+            return
+
+        my_dic = get_imgflip_dic()
+        template_id = find_imgflip_id_using_alias(meme_cmd)
+
+        if not message:
+            if template_id:
+                await ctx.send((f'Current commands to invoke {meme_cmd}: {my_dic[template_id]["aliases"]}\n') +
+                               (f'Website description: {my_dic[template_id]["description"]}'))
+            else:
+                await ctx.send(f'{meme_cmd} not found in meme commands')
+            return
+
+        if template_id:
+            extend_list = message.split(',')
+            new_list = my_dic[template_id]['aliases']
+            new_list = extend_unique_items(
+                my_dic[template_id]['aliases'], extend_list)
+            temp = (
+                f"OLD list : {my_dic[template_id]['aliases']}\n NEW list : {new_list}")
+            await ctx.send(temp)
+            my_dic[template_id]['aliases'] = new_list
+            replace_imgflip_dic(my_dic)
+            await ctx.send('Remember new commands will not be added until bot is restarted.')
+            return
+        else:
+            await ctx.send(f'Nothing Done, failed to find {meme_cmd}')
+            return
 
 
 def setup(client):  # Cog setup command
