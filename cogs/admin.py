@@ -8,6 +8,15 @@ class admin(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
+    @commands.Cog.listener("on_command")
+    async def msg_display(self, ctx):
+        '''Console Command Log'''
+        if (ctx.message.author == self.client) or (ctx.author.id == self.client.owner_id):
+            return
+        timestamp = datetime.now(tz=timezone.utc)
+        print(
+            f'{timestamp} User {ctx.message.author.display_name} in guild {ctx.guild.name} sent {ctx.message.content}')
+
     @commands.command(aliases=['BOTINFO', 'BotInfo', 'bot_info', 'info'])
     async def botinfo(self, ctx):
         '''General Information about PicPal'''
@@ -42,24 +51,23 @@ class admin(commands.Cog):
 
     @commands.command(aliases=['erase'], hidden=True)
     async def purge(self, ctx, num=2):
-        'Admin delete'
+        'Admin message delete'
         if ctx.author.id == self.client.owner_id:
             await ctx.channel.purge(limit=num+1)
         else:
-            if ctx.author.id == 793433316258480128:
-                await ctx.send('Not for you **sniper** :smile:')
-            else:
-                await ctx.send("I don\'t feel compliant right now")
+            await ctx.send(f"I don\'t feel compliant right now {ctx.author.display_name}")
 
     @commands.command(aliases=['cmdcount', 'cmd_count'], hidden=False)
-    async def commands(self, ctx):
-
+    async def command_count(self, ctx):
+        '''Returns current number of bot commands'''
         commands_desc = ''
-        '''
+        alias_count = 0
         for command in self.client.commands:
-            commands_desc += f'{command.name} - {command.help}\n'
-        '''
-        await ctx.send(f'I have {len(self.client.commands)} total commands.')
+            commands_desc += f'{command}(+{len(command.aliases)} aliases) '
+            alias_count += len((command.aliases))+1
+
+        await ctx.send((f'I process {len(self.client.commands)+alias_count} commands total.\n') +
+                       (f'{len(self.client.commands)} command functions + {alias_count} aliases'))
 
 
 def setup(client):  # Cog setup command

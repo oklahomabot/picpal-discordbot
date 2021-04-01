@@ -255,7 +255,7 @@ class api_images(commands.Cog):
 
     @commands.command(aliases=['memelist', 'memeslist' 'listmeme', 'listmemes', 'list_memes'])
     async def meme_list(self, ctx, fields_per_page: int = 5):
-
+        '''List of Meme Making Commands (from imgflip top100)'''
         if fields_per_page not in [3, 4, 5, 6, 7, 8, 9, 10]:
             await(ctx.send('fields_per_page set to 5 (must be 3-10)'))
             fields_per_page = 5
