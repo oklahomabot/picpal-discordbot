@@ -24,9 +24,9 @@ def replace_imgflip_dic(my_dic):
     return
 
 
-def extend_unique_items(old_list, extra_list):
+def extend_unique_items(old_list, additional_items):
     new_list = old_list.copy()
-    for item in extra_list:
+    for item in additional_items:
         if item not in new_list:
             new_list.append(item)
 
@@ -256,7 +256,7 @@ class api_images(commands.Cog):
                          icon_url=self.client.user.avatar_url)
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['memelist', 'memeslist' 'listmeme', 'listmemes', 'list_memes'])
+    @commands.command(aliases=['memes_list', 'list_memes', 'memeslist', 'listmemes', 'memelist'])
     async def meme_list(self, ctx, fields_per_page: int = 5):
         '''List of Meme Making Commands (from imgflip top100)'''
         if fields_per_page not in [3, 4, 5, 6, 7, 8, 9, 10]:
@@ -265,76 +265,56 @@ class api_images(commands.Cog):
 
         imgflip_dic = get_imgflip_dic()
 
-        # find proper reference to command.prefix
-        pre = self.client.command_prefix
         title = 'MEME GENERATOR COMMANDS'
         description = '[List of Top 100 imgflip memes](https://imgflip.com/popular_meme_ids)'
 
-        pages_needed = len(imgflip_dic)//fields_per_page
+        total_pages = len(imgflip_dic)//fields_per_page
         if len(imgflip_dic) % fields_per_page != 0:
-            pages_needed += 1
+            total_pages += 1
 
         embed_list = []
-        for pagenum in range(pages_needed):
-            temp_embed = discord.Embed(
-                title=title, description=description, colour=discord.Colour.blue())
-            temp_embed.set_thumbnail(
-                url=self.client.user.avatar_url_as(size=64))
-            temp_embed.set_footer(
-                text=f'Make meme by typing \"{self.client.command_prefix}<command> <text1>+<text2>\"', icon_url=ctx.author.avatar_url)
-            embed_list.append(temp_embed)
+        for _ in range(total_pages):
+            embed = discord.Embed(title=title, description=description,
+                                  colour=discord.Colour.blue())
+            embed.set_thumbnail(url=self.client.user.avatar_url_as(size=64))
+            embed.set_footer(text=((f'Make meme by typing \"{self.client.command_prefix}') +
+                                   ('<command> <text1>+<text2>\"')), icon_url=ctx.author.avatar_url)
+            embed_list.append(embed)
 
         for index, meme in enumerate(imgflip_dic.keys()):
             temp_str = ' '.join(imgflip_dic[meme]['aliases'])
             embed_list[index //
                        fields_per_page].add_field(name=f'#{imgflip_dic[meme]["rank"]} '+imgflip_dic[meme]['full_name'], value=temp_str, inline=False)
 
-        pages = pages_needed
         cur_page = 1
-        message = await ctx.send(f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
-        await message.add_reaction("◀️")
-        await message.add_reaction("▶️")
-        await message.add_reaction("⏹️")
+        message = await ctx.send(f"Page {cur_page}/{total_pages}", embed=embed_list[cur_page-1])
+
+        emoji_dic = {"⏪": -1*total_pages//4, "◀️": -1, "▶️": 1,
+                     "⏩": total_pages//4, "⏹️": 0}
+        for emoji in emoji_dic.keys():
+            await message.add_reaction(emoji)
 
         def check(reaction, user):
-            return user == ctx.author and str(reaction.emoji) in ["◀️", "▶️", "⏹️"]
+            return user == ctx.author and str(reaction.emoji) in emoji_dic
             # This makes sure nobody except the command sender can interact with the "menu"
 
         while True:
-
             try:
                 reaction, user = await self.client.wait_for("reaction_add", timeout=60.0, check=check)
             except:
-                # await message.edit(content='Timed Out', embed=None)
-                # await asyncio.sleep(10)
-                # await message.delete()
-                # await ctx.message.delete()
-                return
+                return  # Exit Function (Timed Out) due to timeout error
 
-            if str(reaction.emoji) == "▶️":
-                if cur_page == pages:
-                    cur_page = 1
-                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
-                    await message.remove_reaction(reaction, user)
-                else:
-                    cur_page += 1
-                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
-                    await message.remove_reaction(reaction, user)
-            elif str(reaction.emoji) == "◀️":
-                if cur_page == 1:
-                    cur_page = pages
-                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
-                    await message.remove_reaction(reaction, user)
-                else:
-                    cur_page -= 1
-                    await message.edit(content=f"Page {cur_page}/{pages}", embed=embed_list[cur_page-1])
-                    await message.remove_reaction(reaction, user)
-            elif str(reaction.emoji) == "⏹️":
+            if str(reaction.emoji) == "⏹️":
                 await message.edit(content='Process Stopped! Deleting Message', embed=None)
-                await asyncio.sleep(10)
+                await asyncio.sleep(3)
                 await message.delete()
                 await ctx.message.delete()
                 return
+
+            cur_page += emoji_dic[str(reaction.emoji)]
+            cur_page = 1 if cur_page < 1 else total_pages if cur_page > total_pages else cur_page
+            await message.edit(content=f"Page {cur_page} of {total_pages}", embed=embed_list[cur_page-1])
+            await message.remove_reaction(reaction, user)
 
     @commands.command(aliases=['add_meme_command', 'add_command', 'add_cmd', 'addcmd',
                                'del_meme_command', 'del_command', 'del_cmd', 'delcmd'], hidden=False)
