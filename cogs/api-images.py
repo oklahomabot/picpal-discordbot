@@ -289,8 +289,8 @@ class api_images(commands.Cog):
         cur_page = 1
         message = await ctx.send(f"Page {cur_page}/{total_pages}", embed=embed_list[cur_page-1])
 
-        emoji_dic = {"⏪": -1*total_pages//4, "◀️": -1, "▶️": 1,
-                     "⏩": total_pages//4, "⏹️": 0}
+        emoji_dic = {"⏪": -1*(total_pages+2)//4, "◀️": -1, "▶️": 1,
+                     "⏩": (total_pages+2)//4, "⏹️": 0}
         for emoji in emoji_dic.keys():
             await message.add_reaction(emoji)
 
