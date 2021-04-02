@@ -14,8 +14,9 @@ class admin(commands.Cog):
         if (ctx.message.author == self.client) or (ctx.author.id == self.client.owner_id):
             return
         timestamp = datetime.now(tz=timezone.utc)
-        print(
-            f'{timestamp[:17]} User {ctx.message.author.display_name} in guild {ctx.guild.name} sent {ctx.message.content}')
+        print((f'{timestamp.strftime("%x")} {timestamp.strftime("%X")} ') +
+              (f'User {ctx.message.author.display_name} in guild {ctx.guild.name} ') +
+              (f'sent {ctx.message.content}'))
 
     @commands.command(aliases=['BOTINFO', 'BotInfo', 'bot_info', 'info'])
     async def botinfo(self, ctx):
