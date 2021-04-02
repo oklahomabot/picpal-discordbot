@@ -227,11 +227,14 @@ class api_images(commands.Cog):
     async def make_meme(self, ctx, *, message=None):
         '''Let's Make a Meme'''
         if ctx.invoked_with == 'make_meme':
-            await ctx.send(('Please use meme name directly instead of \"make_meme\".') +
-                           ('Use help make_meme for the full list of memes.'))
+            await ctx.send(('Please use a command directly instead of \"make_meme\"\n') +
+                           (f'\"{self.client.command_prefix}meme_list\" to see all meme commands'))
             return
         if (not message) or ('+' not in message):
-            await ctx.send('Bad Input : ex) <template_name> text0+text1 (\"+\" seperates two text strings)')
+            temp = ((f'Please add text fields and try again.\n') +
+                    (f'ex) {self.client.command_prefix}changemymind text1+text2 ') +
+                    (f'(\"+\" seperates the two required text strings)'))
+            await ctx.send(temp)
             return
 
         text0 = message.split('+')[0]
@@ -333,39 +336,51 @@ class api_images(commands.Cog):
                 await ctx.message.delete()
                 return
 
-    @commands.command(aliases=['add', 'add_cmd', 'addcmd'], hidden=False)
-    async def add_meme_command(self, ctx, meme_cmd, *, message=None):
+    @commands.command(aliases=['add_meme_command', 'add_command', 'add_cmd', 'addcmd',
+                               'del_meme_command', 'del_command', 'del_cmd', 'delcmd'], hidden=False)
+    async def edit_meme_commands(self, ctx, meme_cmd, *, message=None):
+        '''
+        (Owner Only Function) edits make_meme function command aliases
+        del will remove one alias mentioned as "meme_cmd"
+        add will extend alias list for meme associated with "meme_cmd"
+        adding uses a comma seperated input as "message"
+        '''
+
         my_info = await self.client.application_info()
         if ctx.author != my_info.owner:
             await ctx.send('NO :smile:')
             return
 
-        my_dic = get_imgflip_dic()
         template_id = find_imgflip_id_using_alias(meme_cmd)
-
-        if not message:
-            if template_id:
-                await ctx.send((f'Current commands to invoke {meme_cmd}: {my_dic[template_id]["aliases"]}\n') +
-                               (f'Website description: {my_dic[template_id]["description"]}'))
-            else:
-                await ctx.send(f'{meme_cmd} not found in meme commands')
-            return
-
-        if template_id:
-            extend_list = message.split(',')
-            new_list = my_dic[template_id]['aliases']
-            new_list = extend_unique_items(
-                my_dic[template_id]['aliases'], extend_list)
-            temp = (
-                f"OLD list : {my_dic[template_id]['aliases']}\n NEW list : {new_list}")
-            await ctx.send(temp)
-            my_dic[template_id]['aliases'] = new_list
-            replace_imgflip_dic(my_dic)
-            await ctx.send('Remember new commands will not be added until bot is restarted.')
-            return
-        else:
+        if not template_id:
             await ctx.send(f'Nothing Done, failed to find {meme_cmd}')
             return
+
+        my_dic = get_imgflip_dic()
+        old_aliases = my_dic[template_id]['aliases']
+        new_aliases = old_aliases.copy()
+
+        if ctx.invoked_with[:3] == 'del':
+            if len(old_aliases) < 2:
+                await ctx.send('This meme must have at least one command.')
+            else:
+                new_aliases.remove(meme_cmd)
+                my_dic[template_id]['aliases'] = new_aliases
+        else:
+            if not message:
+                await ctx.send((f'Current commands to invoke {meme_cmd}: {old_aliases}\n') +
+                               (f'Website description: {my_dic[template_id]["description"]}'))
+                return
+
+            extend_list = message.split(',')
+            new_aliases = extend_unique_items(old_aliases, extend_list)
+
+        my_dic[template_id]['aliases'] = new_aliases
+        replace_imgflip_dic(my_dic)
+        temp = ((f"Original Commands: {old_aliases}\n Edited   Commands: {new_aliases}\n") +
+                ('Changes in command list will not be effective until next bot restart'))
+        await ctx.send(temp)
+        return
 
 
 def setup(client):  # Cog setup command
