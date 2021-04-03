@@ -289,8 +289,8 @@ class api_images(commands.Cog):
             embed_list[index //
                        fields_per_page].add_field(name=f'#{imgflip_dic[meme]["rank"]} '+imgflip_dic[meme]['full_name'], value=temp_str, inline=False)
 
-        cur_page = 1
-        message = await ctx.send(f"Page {cur_page}/{total_pages}", embed=embed_list[cur_page-1])
+        current = 1
+        message = await ctx.send(f"Page {current}/{total_pages}", embed=embed_list[current-1])
 
         emoji_dic = {"⏪": -1*(total_pages+2)//4, "◀️": -1, "▶️": 1,
                      "⏩": (total_pages+2)//4, "⏹️": 0}
@@ -314,9 +314,9 @@ class api_images(commands.Cog):
                 await ctx.message.delete()
                 return
 
-            cur_page += emoji_dic[str(reaction.emoji)]
-            cur_page = 1 if cur_page < 1 else total_pages if cur_page > total_pages else cur_page
-            await message.edit(content=f"Page {cur_page} of {total_pages}", embed=embed_list[cur_page-1])
+            current += emoji_dic[str(reaction.emoji)]
+            current = 1 if current < 1 else total_pages if current > total_pages else current
+            await message.edit(content=f"Page {current} of {total_pages}", embed=embed_list[current-1])
             await message.remove_reaction(reaction, user)
 
     @commands.command(aliases=['add_meme_command', 'add_command', 'add_cmd', 'addcmd',
