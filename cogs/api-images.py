@@ -70,7 +70,7 @@ async def pixabay_url_search(ctx, search_by=None):
             return ('https://cdn.dribbble.com/users/283708/screenshots/7084432/media/451d27c21601d96114f0eea20d9707e2.png?compress=1&resize=400x300')
 
 
-def get_imgflip(template_id=112126428, text0='', text1=''):
+def get_imgflip_url(template_id=112126428, text0='', text1=''):
     result_url = None
     username = os.getenv('IMGFLIP_USER')
     password = os.getenv('IMGFLIP_PASS')
@@ -230,27 +230,30 @@ class api_images(commands.Cog):
             await ctx.send(('Please use a command directly instead of \"make_meme\"\n') +
                            (f'\"{self.client.command_prefix}meme_list\" to see all meme commands'))
             return
-        if (not message) or ('+' not in message):
-            temp = ((f'Please add text fields and try again.\n') +
+        if (not message):
+            temp = ((f'Please add text field(s) and try again.\n') +
                     (f'ex) {self.client.command_prefix}changemymind text1+text2 ') +
-                    (f'(\"+\" seperates the two required text strings)'))
+                    (f'(\"+\" seperates the two text strings) The second text is optional'))
             await ctx.send(temp)
             return
 
         text0 = message.split('+')[0]
-        text1 = message.split('+')[1]
+        if '+' in message:
+            text1 = message.split('+')[1]
+        else:
+            text1 = ''
 
         template_id = find_imgflip_id_using_alias(ctx.invoked_with)
 
-        url = get_imgflip(template_id, text0, text1)
-        # print(f'Command make_meme url={url}')
+        url = get_imgflip_url(template_id, text0, text1)
+
         if not url:
             await ctx.send(f"Something happened, I couldn\'t get your image {ctx.author.display_name} :(")
             return
         embed = discord.Embed(title=f"{ctx.author.display_name}\'s MEME",
                               description=f"provided by [imgflip.com\'s API](https://imgflip.com/)",
                               colour=discord.Colour.blue())
-        embed.set_image(url=get_imgflip(template_id, text0, text1))
+        embed.set_image(url=url)
         embed.set_thumbnail(url=ctx.author.avatar_url_as(size=64))
         embed.set_footer(text=f'Type \"{self.client.command_prefix}meme_list\" for available memes',
                          icon_url=self.client.user.avatar_url)
