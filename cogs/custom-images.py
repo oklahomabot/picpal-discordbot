@@ -306,6 +306,43 @@ class custom_images(commands.Cog):
                        optimize=True, duration=20, loop=0, interlace=True, disposal=2)
         await ctx.send(file=discord.File(out_file))
 
+    @commands.command(aliases=['makefly', 'make_fly'], hidden=True)
+    async def flying(self, ctx, *, user=None):
+        '''
+        Set your friend free - flying through clouds
+        Returns gif image using mentioned user
+        '''
+
+        user = await get_guild_member(ctx, user)
+
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar = im.copy()
+        avatar = make_RGBA(avatar)
+
+        parameters = flying_paste_info()
+        folder = os.path.join('./', 'cogs', 'gifs', 'flying')
+        frame_folder = os.path.join(folder, 'frames')
+        frames = []
+        for frame_name in os.listdir(frame_folder):
+
+            frame_num = int(frame_name.split("_")[1][:2])
+            im = Image.open(os.path.join(frame_folder, frame_name))
+            background = im.copy()
+            background = paste_for_gif(background, avatar,
+                                       rot=parameters[frame_num][0], size=parameters[frame_num][1],
+                                       paste_loc=parameters[frame_num][2])
+            frames.append(background)
+
+        # Assemble and publish animated gif
+        out_file = os.path.join(folder, 'output.gif')
+        frames[0].save(out_file, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=40, loop=0, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
@@ -377,6 +414,26 @@ def dunk_paste_info():
     return_list.append((0, (50, 50), (230, 0)))
     return_list.append((0, (50, 50), (275, 71)))
     return_list.append((0, (50, 50), (275, 165)))
+    return return_list
+
+
+def flying_paste_info():
+    return_list = []
+    y = 76
+    for num in range(9):
+        y = y-0.8
+        return_list.append((0, (40, 40), (184, int(y))))
+    return_list.append((0, (40, 40), (184, int(y))))
+    for num in range(9):
+        y = y+0.8
+        return_list.append((0, (40, 40), (184, int(y))))
+    for num in range(9):
+        y = y-0.8
+        return_list.append((0, (40, 40), (184, int(y))))
+    return_list.append((0, (40, 40), (184, int(y))))
+    for num in range(9):
+        y = y+0.8
+        return_list.append((0, (40, 40), (184, int(y))))
     return return_list
 
 
