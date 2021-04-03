@@ -276,6 +276,39 @@ class custom_images(commands.Cog):
 
         return
 
+    @commands.command(aliases=['frog'], hidden=True)
+    async def pepe(self, ctx, *, user=None):
+        '''
+        Clean yourself or your dirty friends
+        Returns gif image using mentioned user
+        '''
+
+        user = await get_guild_member(ctx, user)
+
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        avatar = im.copy()
+        avatar = make_RGBA(avatar)
+        sized_avatar = resize_avatar(avatar, (150, 150), rot=0)
+
+        folder = os.path.join('./', 'cogs', 'gifs', 'pepe')
+        frame_folder = os.path.join(folder, 'frames')
+        frames = []
+        for frame_name in os.listdir(frame_folder):
+
+            im = Image.open(os.path.join(frame_folder, frame_name))
+            background = im.copy()
+            # if int(frame_name[6:8]) % 2 == 0:
+            background.alpha_composite(sized_avatar, dest=(175, 175))
+            frames.append(background.copy())
+
+        # Assemble and publish animated gif
+        out_file = os.path.join(folder, 'output.gif')
+        frames[0].save(out_file, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=20, loop=0, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(out_file))
+
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
