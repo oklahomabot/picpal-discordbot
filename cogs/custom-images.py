@@ -1,3 +1,4 @@
+import json
 import os
 import discord
 from discord.ext import commands
@@ -306,7 +307,7 @@ class custom_images(commands.Cog):
                        optimize=True, duration=20, loop=0, interlace=True, disposal=2)
         await ctx.send(file=discord.File(out_file))
 
-    @commands.command(aliases=['makefly', 'make_fly'], hidden=True)
+    @commands.command(aliases=['makefly', 'make_fly'], hidden=False)
     async def flying(self, ctx, *, user=None):
         '''
         Set your friend free - flying through clouds
@@ -314,31 +315,10 @@ class custom_images(commands.Cog):
         '''
 
         user = await get_guild_member(ctx, user)
-
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
-
-        parameters = flying_paste_info()
-        folder = os.path.join('./', 'cogs', 'gifs', 'flying')
-        frame_folder = os.path.join(folder, 'frames')
-        frames = []
-        for frame_name in os.listdir(frame_folder):
-
-            frame_num = int(frame_name.split("_")[1][:2])
-            im = Image.open(os.path.join(frame_folder, frame_name))
-            background = im.copy()
-            background = paste_for_gif(background, avatar,
-                                       rot=parameters[frame_num][0], size=parameters[frame_num][1],
-                                       paste_loc=parameters[frame_num][2])
-            frames.append(background)
-
-        # Assemble and publish animated gif
-        out_file = os.path.join(folder, 'output.gif')
-        frames[0].save(out_file, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=40, loop=0, interlace=True, disposal=2)
+        avatar = await make_avatar(user)
+        parameters = get_parameters('flying')
+        frames = construct_frames(parameters, avatar, 'flying')
+        out_file = make_output(frames, 'flying', speed=40)
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -352,6 +332,15 @@ def mask_circle(im):
     mask = mask.resize(im.size, Image.ANTIALIAS)
     im.putalpha(mask)
     return im
+
+
+async def make_avatar(user):
+    asset = user.avatar_url_as(static_format='png')
+    data = BytesIO(await asset.read())
+    im = Image.open(data)
+    avatar = im.copy()
+    avatar = make_RGBA(avatar)
+    return avatar
 
 
 def resize_avatar(avatar, size, rot=0, make_circle=True):
@@ -435,6 +424,46 @@ def flying_paste_info():
         y = y+0.8
         return_list.append((0, (40, 40), (184, int(y))))
     return return_list
+
+
+def get_parameters(img_name):
+    '''
+    One Entry storage example (key is frame_number)
+    [rotation, [sizeX,sizeY], [locationX,locationY]]
+    [[0,[200,200],[100,100]]]
+    '''
+    data_file = os.path.join('./', 'cogs', 'gifs',
+                             img_name, f'{img_name}.json')
+    with open(data_file) as json_file:
+        return_list = json.load(json_file)
+    return return_list
+
+
+def construct_frames(parameters, avatar, img_name):
+
+    folder = os.path.join('./', 'cogs', 'gifs', img_name)
+    frame_folder = os.path.join(folder, 'frames')
+    frames = []
+    for frame_num in range(len(parameters)):
+        filename = f'frame_{frame_num:02d}.png'
+        im = Image.open(os.path.join(frame_folder, filename))
+        background = im.copy()
+        rot = parameters[frame_num][0]
+        size = (parameters[frame_num][1][0], parameters[frame_num][1][1])
+        paste_loc = (parameters[frame_num][2][0], parameters[frame_num][2][1])
+        background = paste_for_gif(background, avatar, rot=rot,
+                                   size=size, paste_loc=paste_loc)
+        frames.append(background)
+
+    return frames
+
+
+def make_output(frames, img_name, speed=100):
+    folder = os.path.join('./', 'cogs', 'gifs', img_name)
+    out_file = os.path.join(folder, 'output.gif')
+    frames[0].save(out_file, save_all=True, append_images=frames[1:],
+                   optimize=True, duration=speed, loop=0, interlace=True, disposal=2)
+    return out_file
 
 
 def make_RGBA(im):
