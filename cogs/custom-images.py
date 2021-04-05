@@ -18,53 +18,28 @@ class custom_images(commands.Cog):
         Flush someone down the drain
         Returns gif image using mentioned user
         '''
-        # Convert user to user or member / use author
-        if user:
-            try:
-                user = await commands.converter.MemberConverter().convert(ctx, user)
-            except:
-                await ctx.send(f"I don\'t know {user}, lets just use your avatar ...")
-                user = ctx.author
-        else:
-            user = ctx.author
+
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        parameters = get_parameters('flush')
+
         folder = os.path.join('./', 'cogs', 'gifs', 'flush')
         im = Image.open(os.path.join(folder, 'flush_master.png'))
         background = im.copy()
         background.putalpha(255)
 
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
-
-        parameters = [(300, (100, 100), (50, 300)),
-                      (0, (100, 100), (50, 300)),
-                      (55, (100, 100), (50, 300)),
-                      (110, (100, 100), (50, 300)),
-                      (180, (100, 100), (80, 120)),
-                      (250, (90, 90), (225, 20)),
-                      (330, (85, 85), (400, 50)),
-                      (0, (85, 85), (440, 150)),
-                      (70, (80, 80), (360, 255)),
-                      (140, (80, 80), (190, 215)),
-                      (210, (70, 70), (225, 110)),
-                      (280, (65, 65), (300, 110)),
-                      (0, (60, 60), (380, 150)),
-                      (60, (50, 50), (375, 165)),
-                      (120, (40, 40), (380, 170)),
-                      (180, (20, 20), (390, 180))]
-
+        # Single Background Image Frame Construction
         frames = []
-        for rot, size, paste_loc in parameters:
+        for frame_num in range(len(parameters)):
+            rot = parameters[frame_num][0]
+            size = (parameters[frame_num][1][0], parameters[frame_num][1][1])
+            paste_loc = (parameters[frame_num][2][0],
+                         parameters[frame_num][2][1])
             frames.append(paste_for_gif(background, avatar,
                                         rot=rot, size=size, paste_loc=paste_loc))
         frames.extend([background, background, background])
 
-        # Assemble and publish animated gif
-        out_file = os.path.join(folder, 'output.gif')
-        frames[0].save(out_file, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=200, loop=0, interlace=True, disposal=2)
+        out_file = make_output(frames, 'flush', speed=200)
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -77,32 +52,10 @@ class custom_images(commands.Cog):
         '''
 
         user = await get_guild_member(ctx, user)
-
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
-
-        parameters = dunk_paste_info()
-        folder = os.path.join('./', 'cogs', 'gifs', 'dunk')
-        frame_folder = os.path.join(folder, 'frames')
-        frames = []
-        for frame_name in os.listdir(frame_folder):
-            if frame_name == 'backup_frames':
-                continue
-
-            frame_num = int(frame_name.split("_")[1][:2])
-            im = Image.open(os.path.join(frame_folder, frame_name))
-            background = im.copy()
-            frames.append(paste_for_gif(background, avatar,
-                                        rot=parameters[frame_num][0], size=parameters[frame_num][1],
-                                        paste_loc=parameters[frame_num][2]))
-
-        # Assemble and publish animated gif
-        out_file = os.path.join(folder, 'output.gif')
-        frames[0].save(out_file, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=90, loop=0, interlace=True, disposal=2)
+        avatar = await make_avatar(user)
+        parameters = get_parameters('dunk')
+        frames = construct_frames(parameters, avatar, 'dunk')
+        out_file = make_output(frames, 'dunk', speed=90)
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -113,7 +66,7 @@ class custom_images(commands.Cog):
         Enjoy a brew with a friend
         Returns gif image using mentioned user
         '''
-
+        # 2 avatar .... perhaps store both in json and split+optional 2nd list/avatar constructing frames
         user = await get_guild_member(ctx, user)
 
         asset = user.avatar_url_as(static_format='png')
@@ -285,26 +238,10 @@ class custom_images(commands.Cog):
         '''
 
         user = await get_guild_member(ctx, user)
-
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
-        sized_avatar = resize_avatar(avatar, (150, 150), rot=0)
-
-        folder = os.path.join('./', 'cogs', 'gifs', 'pepe')
-        frame_folder = os.path.join(folder, 'frames')
-        frames = []
-        for frame_name in os.listdir(frame_folder):
-            im = Image.open(os.path.join(frame_folder, frame_name))
-            background = im.copy()
-            background.alpha_composite(sized_avatar, dest=(175, 175))
-            frames.append(background)
-
-        out_file = os.path.join(folder, 'output.gif')
-        frames[0].save(out_file, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=20, loop=0, interlace=True, disposal=2)
+        avatar = await make_avatar(user)
+        parameters = get_parameters('pepe')
+        frames = construct_frames(parameters, avatar, 'pepe')
+        out_file = make_output(frames, 'pepe', speed=20)
         await ctx.send(file=discord.File(out_file))
 
     @commands.command(aliases=['makefly', 'make_fly'], hidden=False)
