@@ -6,56 +6,69 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 from random import randint
 
+# async def userinfo(self,ctx, target: Optional[Member])
+
 
 class custom_images(commands.Cog):
     def __init__(self, client):
         self.client = client
         self.owner = discord.ClientUser
 
-    @commands.command(aliases=['toilet'], hidden=False)
-    async def flush(self, ctx, *, user=None):
+    @commands.command(aliases=['flying', 'pepe', 'dunk', 'flush'], hidden=False)
+    async def gif_single(self, ctx, user=None):
         '''
-        Flush someone down the drain
+        Make an animated gif - flying, pepe, dunk or flush
         Returns gif image using mentioned user
         '''
+        if ctx.invoked_with == 'gif_single':
+            img_name = 'flying'
+            await ctx.send('Using \"flying\" command as default. Check out others using help menu')
+        else:
+            img_name = ctx.invoked_with.lower()
 
         user = await get_guild_member(ctx, user)
         avatar = await make_avatar(user)
-        parameters = get_parameters('flush')
-
-        folder = os.path.join('./', 'cogs', 'gifs', 'flush')
-        im = Image.open(os.path.join(folder, 'flush_master.png'))
-        background = im.copy()
-        background.putalpha(255)
-
-        # Single Background Image Frame Construction
-        frames = []
-        for frame_num in range(len(parameters)):
-            rot = parameters[frame_num][0]
-            size = (parameters[frame_num][1][0], parameters[frame_num][1][1])
-            paste_loc = (parameters[frame_num][2][0],
-                         parameters[frame_num][2][1])
-            frames.append(paste_for_gif(background, avatar,
-                                        rot=rot, size=size, paste_loc=paste_loc))
-        frames.extend([background, background, background])
-
-        out_file = make_output(frames, 'flush', speed=200)
+        parameters = get_parameters(img_name)
+        frames = construct_frames(parameters, avatar, img_name)
+        out_file = make_output(frames, 'dunk', speed=get_frame_speed(img_name))
         await ctx.send(file=discord.File(out_file))
 
         return
 
-    @commands.command(aliases=['DUNK'], hidden=False)
-    async def dunk(self, ctx, *, user=None):
+    @commands.command(aliases=['washer', 'clean'], hidden=False)
+    async def wash(self, ctx, *, user=None):
         '''
-        Play basketball with a friend
+        Clean yourself or your dirty friends
         Returns gif image using mentioned user
         '''
 
         user = await get_guild_member(ctx, user)
         avatar = await make_avatar(user)
-        parameters = get_parameters('dunk')
-        frames = construct_frames(parameters, avatar, 'dunk')
-        out_file = make_output(frames, 'dunk', speed=90)
+
+        sized_avatar = resize_avatar(avatar, (125, 125), rot=0)
+
+        folder = os.path.join('./', 'cogs', 'gifs', 'wash')
+
+        # sized to match washer images (335,371) pixels
+        whitepic = Image.new('RGBA', (335, 371), (255, 255, 255, 255))
+
+        # 16 images - avatar rotated each image
+        frames = []
+        rot = 360
+        for _ in range(4):
+            for frame_num in range(4):
+                spin = -55 if frame_num in [0, 2] else 10
+                rot += spin
+                background = whitepic.copy()
+                background.alpha_composite(
+                    sized_avatar.rotate(rot), dest=(100, 150))
+                frame_name = f'frame_{frame_num:02}.png'
+                im = Image.open(os.path.join(folder, 'frames', frame_name))
+                washer_img = im.copy()
+                background.alpha_composite(washer_img)
+                frames.append(background)
+
+        out_file = make_output(frames, 'wash', speed=get_frame_speed('wash'))
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -68,34 +81,11 @@ class custom_images(commands.Cog):
         '''
         # 2 avatar .... perhaps store both in json and split+optional 2nd list/avatar constructing frames
         user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        avatar_author = await make_avatar(ctx.author)
 
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
-
-        asset = ctx.author.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar_author = im.copy()
-        avatar_author = make_RGBA(avatar_author)
-
-        parameters = []
-        parameters_author = []
-        for _ in range(5):
-            parameters.append((10, (120, 120), (302, 170)))
-            parameters_author.append((350, (120, 120), (85, 170)))
-
-        parameters[1] = (10, (120, 120), (293, 170))
-        parameters[2] = (10, (120, 120), (282, 170))
-        parameters[3] = (10, (120, 120), (282, 170))
-        parameters[4] = (10, (120, 120), (294, 170))
-
-        parameters_author[1] = ((350, (120, 120), (89, 170)))
-        parameters_author[2] = ((350, (120, 120), (100, 170)))
-        parameters_author[3] = ((350, (120, 120), (100, 170)))
-        parameters_author[4] = ((350, (120, 120), (89, 170)))
+        parameters = get_parameters('beer')
+        parameters_author = get_parameters('beer', 'beer-author')
 
         folder = os.path.join('./', 'cogs', 'gifs', 'beer')
         frame_folder = os.path.join(folder, 'frames')
@@ -115,54 +105,7 @@ class custom_images(commands.Cog):
                                         paste_loc=parameters_author[frame_num][2]))
 
         # Assemble and publish animated gif
-        out_file = os.path.join(folder, 'output.gif')
-        frames[0].save(out_file, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=90, loop=0, interlace=True, disposal=2)
-        await ctx.send(file=discord.File(out_file))
-
-        return
-
-    @commands.command(aliases=['washer', 'clean'], hidden=False)
-    async def wash(self, ctx, *, user=None):
-        '''
-        Clean yourself or your dirty friends
-        Returns gif image using mentioned user
-        '''
-
-        user = await get_guild_member(ctx, user)
-
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
-
-        sized_avatar = resize_avatar(avatar, (125, 125), rot=0)
-
-        folder = os.path.join('./', 'cogs', 'gifs', 'wash')
-
-        # sized to match washer images (335,371) pixels
-        whitepic = Image.new('RGBA', (335, 371), (255, 255, 255, 255))
-
-        # 16 images - avatar rotated each image
-        frames = []
-        rot = 360
-        for _ in range(4):
-            for frame_num in range(4):
-                spin = -55 if frame_num in [0, 2] else 10
-                rot += spin
-                background = whitepic.copy()
-                background.alpha_composite(
-                    sized_avatar.rotate(rot), dest=(100, 150))
-                frame_name = f'tframe_{frame_num:02}.png'
-                im = Image.open(os.path.join(folder, 'frames', frame_name))
-                washer_img = im.copy()
-                background.alpha_composite(washer_img)
-                frames.append(background.copy())
-
-        out_file = os.path.join(folder, 'output.gif')
-        frames[0].save(out_file, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=300, loop=0, interlace=True, disposal=2)
+        out_file = make_output(frames, 'beer', speed=get_frame_speed('beer'))
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -230,36 +173,6 @@ class custom_images(commands.Cog):
 
         return
 
-    @commands.command(aliases=['frog'], hidden=False)
-    async def pepe(self, ctx, *, user=None):
-        '''
-        It's the frog! Don't look too long.
-        Returns gif image using mentioned user
-        '''
-
-        user = await get_guild_member(ctx, user)
-        avatar = await make_avatar(user)
-        parameters = get_parameters('pepe')
-        frames = construct_frames(parameters, avatar, 'pepe')
-        out_file = make_output(frames, 'pepe', speed=20)
-        await ctx.send(file=discord.File(out_file))
-
-    @commands.command(aliases=['makefly', 'make_fly'], hidden=False)
-    async def flying(self, ctx, *, user=None):
-        '''
-        Set your friend free - flying through clouds
-        Returns gif image using mentioned user
-        '''
-
-        user = await get_guild_member(ctx, user)
-        avatar = await make_avatar(user)
-        parameters = get_parameters('flying')
-        frames = construct_frames(parameters, avatar, 'flying')
-        out_file = make_output(frames, 'flying', speed=40)
-        await ctx.send(file=discord.File(out_file))
-
-        return
-
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
@@ -310,67 +223,15 @@ async def get_guild_member(ctx, user=None):
     return user
 
 
-def dunk_paste_info():
-    return_list = []
-    return_list.append((0, (50, 50), (199, 150)))
-    return_list.append((0, (50, 50), (199, 170)))
-    return_list.append((0, (50, 50), (199, 191)))
-    return_list.append((0, (50, 50), (199, 236)))
-    return_list.append((0, (50, 50), (199, 211)))
-    return_list.append((0, (50, 50), (199, 178)))
-    return_list.append((0, (50, 50), (199, 152)))
-    return_list.append((0, (50, 50), (199, 170)))
-    return_list.append((0, (50, 50), (199, 211)))
-    return_list.append((0, (50, 50), (199, 236)))
-    return_list.append((0, (50, 50), (199, 210)))
-    return_list.append((0, (50, 50), (199, 160)))
-    return_list.append((0, (50, 50), (203, 142)))
-    return_list.append((0, (50, 50), (203, 159)))
-    return_list.append((0, (50, 50), (203, 211)))
-    return_list.append((0, (50, 50), (203, 222)))
-    return_list.append((0, (50, 50), (203, 209)))
-    return_list.append((0, (50, 50), (203, 178)))
-    return_list.append((0, (50, 50), (203, 150)))
-    return_list.append((0, (50, 50), (203, 142)))
-    return_list.append((0, (50, 50), (203, 131)))
-    return_list.append((0, (50, 50), (213, 95)))
-    return_list.append((0, (50, 50), (218, 35)))
-    return_list.append((0, (50, 50), (223, 0)))
-    return_list.append((0, (50, 50), (223, 0)))
-    return_list.append((0, (50, 50), (230, 0)))
-    return_list.append((0, (50, 50), (275, 71)))
-    return_list.append((0, (50, 50), (275, 165)))
-    return return_list
-
-
-def flying_paste_info():
-    return_list = []
-    y = 76
-    for num in range(9):
-        y = y-0.8
-        return_list.append((0, (40, 40), (184, int(y))))
-    return_list.append((0, (40, 40), (184, int(y))))
-    for num in range(9):
-        y = y+0.8
-        return_list.append((0, (40, 40), (184, int(y))))
-    for num in range(9):
-        y = y-0.8
-        return_list.append((0, (40, 40), (184, int(y))))
-    return_list.append((0, (40, 40), (184, int(y))))
-    for num in range(9):
-        y = y+0.8
-        return_list.append((0, (40, 40), (184, int(y))))
-    return return_list
-
-
-def get_parameters(img_name):
+def get_parameters(img_name, filename=None):
     '''
     One Entry storage example (key is frame_number)
     [rotation, [sizeX,sizeY], [locationX,locationY]]
     [[0,[200,200],[100,100]]]
     '''
+    filename = img_name if not filename else filename
     data_file = os.path.join('./', 'cogs', 'gifs',
-                             img_name, f'{img_name}.json')
+                             img_name, f'{filename}.json')
     with open(data_file) as json_file:
         return_list = json.load(json_file)
     return return_list
@@ -461,6 +322,12 @@ def random_tictactoe(avatars, background, paste_loc):
         game_result = tictactoe_winner(board)
 
     return game_result, board, img_frames
+
+
+def get_frame_speed(img_name):
+    speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
+                 'wash': 300, 'beer': 90}
+    return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
 def setup(client):  # Cog setup command

@@ -163,6 +163,37 @@ class api_images(commands.Cog):
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=['giphy', 'gif'], hidden=False)
+    async def gif_search(self, ctx, *, search_txt=None):
+        '''
+        Provides an image using your search words (optional)
+        Pictures retrieved using giphy.com's API
+        '''
+        GIPHY_API_KEY = os.getenv('GIPHY_API_KEY')
+        getVars = {'api_key': GIPHY_API_KEY,
+                   'tag': search_txt, 'rating': 'pg13'}
+        url = 'https://api.giphy.com/v1/gifs/random?'
+        response = requests.get(url + urllib.parse.urlencode(getVars))
+
+        if response.status_code != 200:
+            await ctx.send('Well ... that did not work for some reason.')
+            return
+        data = json.loads(response.text)
+        title = 'RANDOM gif' if not search_txt else (f'\"{search_txt}\" GIF')
+        embed = discord.Embed(
+            title=title, colour=discord.Colour(0xE5E242),
+            description=f"{data['data']['title']} [Powered By GIPHY](https://giphy.com/)",
+            timestamp=datetime.now(tz=timezone.utc))
+        embed.set_author(name=ctx.author.display_name,
+                         icon_url=ctx.author.avatar_url)
+        embed.set_footer(
+            text=f'Requested by: {ctx.author.name}', icon_url=self.client.user.avatar_url)
+
+        embed.set_image(url=data['data']['images']['original']['url'])
+        await ctx.send(embed=embed)
+
+        return
+
     @commands.command(aliases=['Trigger', 'TRIGGER'], hidden=False)
     async def trigger(self, ctx, *, user=None):
         '''
