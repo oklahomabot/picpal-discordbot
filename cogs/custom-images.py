@@ -6,8 +6,6 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 from random import randint
 
-# async def userinfo(self,ctx, target: Optional[Member])
-
 
 class custom_images(commands.Cog):
     def __init__(self, client):
@@ -26,6 +24,22 @@ class custom_images(commands.Cog):
         else:
             img_name = ctx.invoked_with.lower()
 
+        user = get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        parameters = get_parameters(img_name)
+        frames = construct_frames(parameters, avatar, img_name)
+        out_file = make_output(frames, 'dunk', speed=get_frame_speed(img_name))
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
+    @commands.command(aliases=['rocket'], hidden=False)
+    async def launch(self, ctx, user=None):
+        '''
+        Woosh goes the rocket!
+        Returns gif image using mentioned user
+        '''
+        img_name = 'launch'
         user = await get_guild_member(ctx, user)
         avatar = await make_avatar(user)
         parameters = get_parameters(img_name)
@@ -42,7 +56,7 @@ class custom_images(commands.Cog):
         Returns gif image using mentioned user
         '''
 
-        user = await get_guild_member(ctx, user)
+        user = get_guild_member(ctx, user)
         avatar = await make_avatar(user)
 
         sized_avatar = resize_avatar(avatar, (125, 125), rot=0)
@@ -326,7 +340,7 @@ def random_tictactoe(avatars, background, paste_loc):
 
 def get_frame_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
-                 'wash': 300, 'beer': 90}
+                 'wash': 300, 'beer': 90, 'launch': 40}
     return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
