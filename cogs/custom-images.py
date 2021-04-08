@@ -12,23 +12,51 @@ class custom_images(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
-    @commands.command(aliases=['flying', 'pepe', 'dunk', 'flush'], hidden=False)
-    async def gif_single(self, ctx, user=None):
+    @commands.command(aliases=['slam_dunk', 'slamdunk'], hidden=False)
+    async def dunk(self, ctx, user=None):
         '''
-        Make an animated gif - flying, pepe, dunk or flush
+        Slam Dunk someone for fun
         Returns gif image using mentioned user
         '''
-        if ctx.invoked_with == 'gif_single':
-            img_name = 'flying'
-            await ctx.send('Using \"flying\" command as default. Check out others using help menu')
-        else:
-            img_name = ctx.invoked_with.lower()
 
-        user = get_guild_member(ctx, user)
+        img_name = 'dunk'
+        user = await get_guild_member(ctx, user)
         avatar = await make_avatar(user)
         parameters = get_parameters(img_name)
         frames = construct_frames(parameters, avatar, img_name)
-        out_file = make_output(frames, 'dunk', speed=get_frame_speed(img_name))
+        out_file = make_output(frames, img_name, speed=get_speed(img_name))
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
+    @commands.command(hidden=False)
+    async def flush(self, ctx, user=None):
+        '''
+        Flush someone down the drain
+        Returns gif image using mentioned user
+        '''
+        img_name = 'flush'
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        parameters = get_parameters(img_name)
+        frames = construct_frames(parameters, avatar, img_name)
+        out_file = make_output(frames, img_name, speed=get_speed(img_name))
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
+    @commands.command(aliases=['fly_high'], hidden=False)
+    async def flying(self, ctx, user=None):
+        '''
+        Soaring through the air looks fun
+        Returns gif image using mentioned user
+        '''
+        img_name = 'flying'
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        parameters = get_parameters(img_name)
+        frames = construct_frames(parameters, avatar, img_name)
+        out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -44,7 +72,23 @@ class custom_images(commands.Cog):
         avatar = await make_avatar(user)
         parameters = get_parameters(img_name)
         frames = construct_frames(parameters, avatar, img_name)
-        out_file = make_output(frames, 'dunk', speed=get_frame_speed(img_name))
+        out_file = make_output(frames, img_name, speed=get_speed(img_name))
+        await ctx.send(file=discord.File(out_file))
+
+        return
+
+    @commands.command(hidden=False)
+    async def pepe(self, ctx, user=None):
+        '''
+        Don't Stare at the frog too long
+        Returns gif image using mentioned user
+        '''
+        img_name = 'pepe'
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        parameters = get_parameters(img_name)
+        frames = construct_frames(parameters, avatar, img_name)
+        out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -56,7 +100,7 @@ class custom_images(commands.Cog):
         Returns gif image using mentioned user
         '''
 
-        user = get_guild_member(ctx, user)
+        user = await get_guild_member(ctx, user)
         avatar = await make_avatar(user)
 
         sized_avatar = resize_avatar(avatar, (125, 125), rot=0)
@@ -82,7 +126,7 @@ class custom_images(commands.Cog):
                 background.alpha_composite(washer_img)
                 frames.append(background)
 
-        out_file = make_output(frames, 'wash', speed=get_frame_speed('wash'))
+        out_file = make_output(frames, 'wash', speed=get_speed('wash'))
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -98,8 +142,8 @@ class custom_images(commands.Cog):
         avatar = await make_avatar(user)
         avatar_author = await make_avatar(ctx.author)
 
-        parameters = get_parameters('beer')
-        parameters_author = get_parameters('beer', 'beer-author')
+        par_user = get_parameters('beer')
+        par_auth = get_parameters('beer', 'beer-author')
 
         folder = os.path.join('./', 'cogs', 'gifs', 'beer')
         frame_folder = os.path.join(folder, 'frames')
@@ -111,15 +155,19 @@ class custom_images(commands.Cog):
             frame_num = int(frame_name.split("_")[1][:2])
             im = Image.open(os.path.join(frame_folder, frame_name))
             background = im.copy()
+            size_u = (par_user[frame_num][1][0], par_user[frame_num][1][1])
+            loca_u = (par_user[frame_num][2][0], par_user[frame_num][2][1])
+            size_a = (par_auth[frame_num][1][0], par_auth[frame_num][1][1])
+            locu_a = (par_auth[frame_num][2][0], par_auth[frame_num][2][1])
             temp_img = (paste_for_gif(background, avatar,
-                                      rot=parameters[frame_num][0], size=parameters[frame_num][1],
-                                      paste_loc=parameters[frame_num][2]))
+                                      rot=par_user[frame_num][0], size=size_u,
+                                      paste_loc=loca_u))
             frames.append(paste_for_gif(temp_img, avatar_author,
-                                        rot=parameters_author[frame_num][0], size=parameters_author[frame_num][1],
-                                        paste_loc=parameters_author[frame_num][2]))
+                                        rot=par_auth[frame_num][0], size=size_a,
+                                        paste_loc=locu_a))
 
         # Assemble and publish animated gif
-        out_file = make_output(frames, 'beer', speed=get_frame_speed('beer'))
+        out_file = make_output(frames, 'beer', speed=get_speed('beer'))
         await ctx.send(file=discord.File(out_file))
 
         return
@@ -127,29 +175,19 @@ class custom_images(commands.Cog):
     @commands.command(aliases=['ttt', 'tic_tac_toe'], hidden=False)
     async def tictactoe(self, ctx, *, user=None):
         '''
-        Generates a radom game of Tic Tac Toe with whomever you want
+        A random tic tac toe game with anyone
         '''
 
-        try:
-            user = await commands.converter.MemberConverter().convert(ctx, user)
-        except:
+        user = await get_guild_member(ctx, user)
+        if ctx.author == user:
             text = (("How about you pretend to mention another user and I pretend to make your game?") +
                     (f"\nTry mentioning a member of {ctx.guild.name} ... or don\'t."))
             await ctx.send(text)
             return
 
-        asset = user.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar = im.copy()
-        avatar = make_RGBA(avatar)
+        avatar = await make_avatar(user)
         avatar = resize_avatar(avatar, (150, 150), rot=0)
-
-        asset = ctx.author.avatar_url_as(static_format='png')
-        data = BytesIO(await asset.read())
-        im = Image.open(data)
-        avatar_author = im.copy()
-        avatar_author = make_RGBA(avatar_author)
+        avatar_author = await make_avatar(ctx.author)
         avatar_author = resize_avatar(avatar_author, (150, 150), rot=0)
 
         folder = os.path.join("./", "cogs", 'gifs', 'tictactoe')
@@ -166,8 +204,7 @@ class custom_images(commands.Cog):
         paste_loc = [(40, 40), (230, 40), (420, 40), (40, 230), (230, 230),
                      (420, 230), (40, 420), (230, 420), (420, 420)]
 
-        result, final_board, frames = random_tictactoe(
-            avatars, background, paste_loc)
+        result, frames = random_tictactoe(avatars, background, paste_loc)
 
         if result == 'tie':
             output_text = 'No Winner, game is a tie'
@@ -335,10 +372,10 @@ def random_tictactoe(avatars, background, paste_loc):
         player_num = 1 if player_num == 2 else 2
         game_result = tictactoe_winner(board)
 
-    return game_result, board, img_frames
+    return game_result, img_frames
 
 
-def get_frame_speed(img_name):
+def get_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
                  'wash': 300, 'beer': 90, 'launch': 40}
     return 200 if img_name not in speed_dic else speed_dic[img_name]

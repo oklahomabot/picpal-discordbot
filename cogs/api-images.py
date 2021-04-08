@@ -141,8 +141,8 @@ class api_images(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
-    @commands.command(aliases=['pic', 'picture'], hidden=False)
-    async def get_pic(self, ctx, *, search_txt=None):
+    @commands.command(aliases=['get_pic', 'picture'], hidden=False)
+    async def pic(self, ctx, *, search_txt=None):
         '''
         Provides an image using your search words (optional)
         Pictures retrieved using Pixabay's API
@@ -163,8 +163,8 @@ class api_images(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['giphy', 'gif'], hidden=False)
-    async def gif_search(self, ctx, *, search_txt=None):
+    @commands.command(aliases=['giphy', 'gif_search'], hidden=False)
+    async def gif(self, ctx, *, search_txt=None):
         '''
         Provides an image using your search words (optional)
         Pictures retrieved using giphy.com's API
@@ -221,8 +221,8 @@ class api_images(commands.Cog):
 
         await ctx.send(f'Do not forget about karma {ctx.author.name} ...', file=discord.File(out_path))
 
-    @commands.command(aliases=['ani'], hidden=False)
-    async def animu(self, ctx, *, category=None):
+    @commands.command(aliases=['animu'], hidden=False)
+    async def ani(self, ctx, *, category=None):
         '''View an animu in category wink, hug, pat or face-palm'''
 
         if category == 'face palm':
@@ -355,9 +355,9 @@ class api_images(commands.Cog):
     async def edit_meme_commands(self, ctx, meme_cmd, *, message=None):
         '''
         (Owner Only Function) edits make_meme function command aliases
-        del will remove one alias mentioned as "meme_cmd"
-        add will extend alias list for meme associated with "meme_cmd"
-        adding uses a comma seperated input as "message"
+        del_cmd <command> will remove one command alias
+        add_cmd <command> <list> will add aliases
+        adding uses a comma seperated list (no brackets needed)
         '''
 
         my_info = await self.client.application_info()
