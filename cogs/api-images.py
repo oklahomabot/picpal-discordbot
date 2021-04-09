@@ -254,7 +254,7 @@ class api_images(commands.Cog):
             text=f'Requested by: {ctx.author.name}', icon_url=ctx.author.avatar_url)
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=get_meme_aliases(), hidden=False)
+    @commands.command(aliases=get_meme_aliases(), hidden=True)
     async def make_meme(self, ctx, *, message=None):
         '''Let's Make a Meme'''
         if ctx.invoked_with == 'make_meme':
@@ -292,7 +292,13 @@ class api_images(commands.Cog):
 
     @commands.command(aliases=['memes_list', 'list_memes', 'memeslist', 'listmemes', 'memelist'])
     async def meme_list(self, ctx, fields_per_page: int = 5):
-        '''List of Meme Making Commands (from imgflip top100)'''
+        '''
+        Custom Meme Making Commands (from imgflip top100)
+        Make memes using your own text for fun
+        example use :
+        angrygf pretty server+oklahoma_bot
+        <command> text1+text2
+        '''
         if fields_per_page not in [3, 4, 5, 6, 7, 8, 9, 10]:
             await(ctx.send('fields_per_page set to 5 (must be 3-10)'))
             fields_per_page = 5
