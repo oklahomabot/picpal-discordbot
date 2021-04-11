@@ -19,35 +19,25 @@ class custom_images(commands.Cog):
         Returns gif image using mentioned user
         '''
 
-        img_name = 'visitor'
-
-        # paste avatar onto background for use with all frames
-        # alphacomposite all frames onto background and save for gif
-        # output gif
-
         user = await get_guild_member(ctx, user)
         avatar = await make_avatar(user)
-
         sized_avatar = resize_avatar(avatar, (152, 152), rot=0)
 
-        folder = os.path.join('./', 'cogs', 'gifs', 'visitor')
+        img_name = 'visitor'
+        folder = os.path.join('./', 'cogs', 'gifs', img_name)
+        whitepic = Image.open(os.path.join(folder, 'background.png'))
+        whitepic.alpha_composite(sized_avatar, dest=(50, 60))
 
-        # sized to match door images (249,272) pixels
-        whitepic = Image.new('RGBA', (249, 272), (255, 255, 255, 255))
-
-        # 16 images - avatar rotated each image
         frames = []
-        rot = 0
         for frame_num in range(17):
             background = whitepic.copy()
-            background.alpha_composite(
-                sized_avatar.rotate(rot), dest=(50, 60))
             frame_name = f'frame_{frame_num:02}.png'
             im = Image.open(os.path.join(folder, 'frames', frame_name))
-            background.alpha_composite(im.copy())
+            background.alpha_composite(im)
             frames.append(background)
         out_file = make_output(frames, 'visitor', speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
+        os.remove(out_file)
         return
 
     @commands.command(aliases=['slam_dunk', 'slamdunk'], hidden=False)
@@ -64,7 +54,7 @@ class custom_images(commands.Cog):
         frames = construct_frames(parameters, avatar, img_name)
         out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(hidden=False)
@@ -80,7 +70,7 @@ class custom_images(commands.Cog):
         frames = construct_frames(parameters, avatar, img_name)
         out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(aliases=['fly_high'], hidden=False)
@@ -96,7 +86,7 @@ class custom_images(commands.Cog):
         frames = construct_frames(parameters, avatar, img_name)
         out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(aliases=['rocket'], hidden=False)
@@ -112,7 +102,7 @@ class custom_images(commands.Cog):
         frames = construct_frames(parameters, avatar, img_name)
         out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(hidden=False)
@@ -128,7 +118,7 @@ class custom_images(commands.Cog):
         frames = construct_frames(parameters, avatar, img_name)
         out_file = make_output(frames, img_name, speed=get_speed(img_name))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(aliases=['washer', 'clean'], hidden=False)
@@ -166,7 +156,7 @@ class custom_images(commands.Cog):
 
         out_file = make_output(frames, 'wash', speed=get_speed('wash'))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(aliases=['BEER'], hidden=False)
@@ -207,7 +197,7 @@ class custom_images(commands.Cog):
         # Assemble and publish animated gif
         out_file = make_output(frames, 'beer', speed=get_speed('beer'))
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         return
 
     @commands.command(aliases=['ttt', 'tic_tac_toe'], hidden=False)
@@ -257,9 +247,8 @@ class custom_images(commands.Cog):
         frames[0].save(out_file, save_all=True, append_images=frames[1:],
                        optimize=True, duration=1000, interlace=True, disposal=2)
         await ctx.send(file=discord.File(out_file))
-
+        os.remove(out_file)
         await ctx.send(output_text)
-
         return
 
 
@@ -415,7 +404,7 @@ def random_tictactoe(avatars, background, paste_loc):
 
 def get_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
-                 'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 100}
+                 'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 200}
     return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
