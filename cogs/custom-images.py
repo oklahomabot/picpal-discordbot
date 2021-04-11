@@ -12,6 +12,44 @@ class custom_images(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
+    @commands.command(aliases=['open_doors'], hidden=True)
+    async def visitor(self, ctx, user=None):
+        '''
+        Look who's visiting ...
+        Returns gif image using mentioned user
+        '''
+
+        img_name = 'visitor'
+
+        # paste avatar onto background for use with all frames
+        # alphacomposite all frames onto background and save for gif
+        # output gif
+
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+
+        sized_avatar = resize_avatar(avatar, (152, 152), rot=0)
+
+        folder = os.path.join('./', 'cogs', 'gifs', 'visitor')
+
+        # sized to match door images (249,272) pixels
+        whitepic = Image.new('RGBA', (249, 272), (255, 255, 255, 255))
+
+        # 16 images - avatar rotated each image
+        frames = []
+        rot = 0
+        for frame_num in range(17):
+            background = whitepic.copy()
+            background.alpha_composite(
+                sized_avatar.rotate(rot), dest=(50, 60))
+            frame_name = f'frame_{frame_num:02}.png'
+            im = Image.open(os.path.join(folder, 'frames', frame_name))
+            background.alpha_composite(im.copy())
+            frames.append(background)
+        out_file = make_output(frames, 'visitor', speed=get_speed(img_name))
+        await ctx.send(file=discord.File(out_file))
+        return
+
     @commands.command(aliases=['slam_dunk', 'slamdunk'], hidden=False)
     async def dunk(self, ctx, user=None):
         '''
@@ -377,7 +415,7 @@ def random_tictactoe(avatars, background, paste_loc):
 
 def get_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
-                 'wash': 300, 'beer': 90, 'launch': 40}
+                 'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 100}
     return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
