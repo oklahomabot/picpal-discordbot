@@ -251,6 +251,54 @@ class custom_images(commands.Cog):
         await ctx.send(output_text)
         return
 
+    @commands.command(aliases=['BRICK'], hidden=False)
+    async def brick(self, ctx, *, user=None):
+        '''
+        Remove friend from the brick wall
+        Returns gif image using mentioned user
+        '''
+        img_name = 'brick'
+        victim = await get_guild_member(ctx, user)
+        victim = await make_avatar(victim)
+        victim = victim.resize((280, 80))
+        author = await make_avatar(ctx.author)
+        author = author.resize((128, 128))
+        author = mask_circle(author)
+        parameters = get_parameters(img_name)
+        folder = os.path.join('./', 'cogs', 'gifs', img_name)
+        frames = []
+        for frame_num in range(len(parameters)):
+            background = Image.open(os.path.join(
+                folder, 'frames', (f'frame_{frame_num:02d}.png')))
+            if frame_num <= 15:
+                background.alpha_composite(victim, dest=(160, 73))
+            rot = parameters[frame_num][0]
+            size = (parameters[frame_num][1][0], parameters[frame_num][1][1])
+            paste_loc = (parameters[frame_num][2][0],
+                         parameters[frame_num][2][1])
+            background = paste_for_gif(background, author, rot=rot,
+                                       size=size, paste_loc=paste_loc)
+            frames.append(background.copy())
+
+        out_file = make_output(frames, 'brick', speed=get_speed('brick'))
+        await ctx.send(file=discord.File(out_file))
+        os.remove(out_file)
+
+    @commands.command(aliases=['TEST'], hidden=True)
+    async def test(self, ctx, *, user=None):
+        '''
+        Saved sample avatar in cogs/gifs/sample folder
+
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        avatar = mask_circle(avatar)
+        filepath = os.path.join("./", "cogs", 'gifs',
+                                'sample', 'sample_avatar_round.png')
+        avatar.save(filepath)
+        await ctx.send(filepath)
+        '''
+        return
+
 
 def mask_circle(im):
     bigsize = (im.size[0] * 3, im.size[1] * 3)
@@ -404,7 +452,8 @@ def random_tictactoe(avatars, background, paste_loc):
 
 def get_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
-                 'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 200}
+                 'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 200,
+                 'brick': 100}
     return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
