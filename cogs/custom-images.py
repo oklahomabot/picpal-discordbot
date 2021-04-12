@@ -40,6 +40,23 @@ class custom_images(commands.Cog):
         os.remove(out_file)
         return
 
+    @commands.command(aliases=['grow', 'sunflower'], hidden=False)
+    async def flower(self, ctx, user=None):
+        '''
+        Grow a beautiful flower
+        Returns gif image using mentioned user
+        '''
+
+        img_name = 'flower'
+        user = await get_guild_member(ctx, user)
+        avatar = await make_avatar(user)
+        parameters = get_parameters(img_name)
+        frames = construct_frames(parameters, avatar, img_name)
+        out_file = make_output(frames, img_name, speed=get_speed(img_name))
+        await ctx.send(file=discord.File(out_file))
+        os.remove(out_file)
+        return
+
     @commands.command(aliases=['slam_dunk', 'slamdunk'], hidden=False)
     async def dunk(self, ctx, user=None):
         '''
@@ -322,7 +339,8 @@ async def make_avatar(user):
 def resize_avatar(avatar, size, rot=0, make_circle=True):
     new_avatar = avatar.copy()
     new_avatar = new_avatar.rotate(rot)
-    new_avatar = new_avatar.resize(size)
+    if size != new_avatar.size:
+        new_avatar = new_avatar.resize(size)
     if make_circle:
         new_avatar = mask_circle(new_avatar)
     return new_avatar
@@ -453,7 +471,7 @@ def random_tictactoe(avatars, background, paste_loc):
 def get_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
                  'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 200,
-                 'brick': 100}
+                 'brick': 100, 'flower': 80}
     return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
