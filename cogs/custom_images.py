@@ -7,6 +7,42 @@ from io import BytesIO
 from random import randint
 
 
+class ImgPiece():
+    def __init__(self, piece_num, pic, origin, destination=None):
+        self.piece_num = piece_num
+        self.pic = pic
+        self.origin = origin
+        self.x = origin[0]
+        self.y = origin[1]
+        self.pos_num = 0
+        self.locations = []
+        if not destination:
+            self.destination = origin
+
+    def next_location(self):
+        self.pos_num += 1
+        next = self.locations[self.pos_num]
+        self.x = next[0]
+        self.y = next[1]
+        return next
+
+    def set_destination(self, destination, steps):
+        self.pos_num = 0
+        loc_list = []
+        loc_list.append((self.x, self.y))
+        x = self.x
+        y = self.y
+        x_step_size = ((destination[0]-x)/steps)
+        y_step_size = ((destination[1]-y)/steps)
+        for _ in range(steps-1):
+            x += x_step_size
+            y += y_step_size
+            loc_list.append((int(x), int(y)))
+        loc_list.append(destination)
+        self.locations = loc_list
+        return
+
+
 class custom_images(commands.Cog):
     def __init__(self, client):
         self.client = client
@@ -301,19 +337,76 @@ class custom_images(commands.Cog):
         await ctx.send(file=discord.File(out_file))
         os.remove(out_file)
 
-    @commands.command(aliases=['TEST'], hidden=True)
-    async def test(self, ctx, *, user=None):
+    @commands.command(aliases=['pfp'], hidden=True)
+    async def avatar(self, ctx, *, user=None):
         '''
-        Saved sample avatar in cogs/gifs/sample folder
+        What is happening??????
+        Returns gif image using mentioned user
+        '''
+
+        img_name = 'avatar'
 
         user = await get_guild_member(ctx, user)
-        avatar = await make_avatar(user)
-        avatar = mask_circle(avatar)
-        filepath = os.path.join("./", "cogs", 'gifs',
-                                'sample', 'sample_avatar_round.png')
-        avatar.save(filepath)
-        await ctx.send(filepath)
-        '''
+        # make avatar image
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        im = im.resize((500, 500), Image.ANTIALIAS)
+        avatar = im.copy()
+
+        # make individual piece objects
+        background_border = 200
+        img_pieces = []
+        for row in range(5):
+            for col in range(5):
+                x = row*100
+                y = col*100
+                piece_num = row*5+col
+                temp = ImgPiece(piece_num, avatar.crop(
+                    (x, y, x+100, y+100)), (x+background_border, y+background_border))
+                img_pieces.append(temp)
+
+        number_of_pieces = len(img_pieces)
+        print(f'{number_of_pieces} pieces created')
+
+        folder = os.path.join('./', 'cogs', 'gifs', img_name)
+        background = Image.open(os.path.join(folder, 'background.png'))
+
+        # First frame centered
+        temp = background.copy()
+        temp.paste(avatar, (200, 200))
+        frames = []
+        for _ in range(15):
+            frames.append(temp)
+
+        destinations = [(0, 0), (0, 800), (800, 0), (800, 800)]
+        for target in destinations:
+            # Set image destinations
+            step_count = 10
+            for num in range(number_of_pieces):
+                img_pieces[num].set_destination(target, step_count)
+            # Move pieces
+            for _ in range(step_count):
+                temp = background.copy()
+                for piece in img_pieces:
+                    temp.paste(piece.pic, piece.next_location())
+                frames.append(temp)
+            # Set destinations back to original locations
+            for num in range(number_of_pieces):
+                img_pieces[num].set_destination(
+                    img_pieces[num].origin, step_count)
+            # Move pieces
+            for _ in range(step_count):
+                temp = background.copy()
+                for piece in img_pieces:
+                    temp.paste(piece.pic, piece.next_location())
+                frames.append(temp)
+
+        outfile = os.path.join(folder, (f'{ctx.author}.gif'))
+        frames[0].save(outfile, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=60, loop=0, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(outfile))
+        os.remove(outfile)
         return
 
 
@@ -331,9 +424,10 @@ async def make_avatar(user):
     asset = user.avatar_url_as(static_format='png')
     data = BytesIO(await asset.read())
     im = Image.open(data)
-    avatar = im.copy()
-    avatar = make_RGBA(avatar)
-    return avatar
+    # avatar = im.copy()
+    # avatar = make_RGBA(avatar)
+    im = make_RGBA(im)
+    return im
 
 
 def resize_avatar(avatar, size, rot=0, make_circle=True):
@@ -471,7 +565,7 @@ def random_tictactoe(avatars, background, paste_loc):
 def get_speed(img_name):
     speed_dic = {'flying': 40, 'pepe': 20, "dunk": 90, 'flush': 200,
                  'wash': 300, 'beer': 90, 'launch': 40, 'visitor': 200,
-                 'brick': 100, 'flower': 80}
+                 'brick': 100, 'flower': 100}
     return 200 if img_name not in speed_dic else speed_dic[img_name]
 
 
