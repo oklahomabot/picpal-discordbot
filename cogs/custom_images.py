@@ -48,7 +48,7 @@ class custom_images(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
-    @commands.command(aliases=['open_doors'], hidden=True)
+    @commands.command(aliases=['open_doors'], hidden=False)
     async def visitor(self, ctx, user=None):
         '''
         Look who's visiting ...
@@ -337,7 +337,7 @@ class custom_images(commands.Cog):
         await ctx.send(file=discord.File(out_file))
         os.remove(out_file)
 
-    @commands.command(aliases=['pfp'], hidden=True)
+    @commands.command(aliases=['pfp'], hidden=False)
     async def avatar(self, ctx, *, user=None):
         '''
         What is happening??????
