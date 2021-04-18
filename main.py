@@ -18,12 +18,13 @@ cogs = [fn[:-3] for fn in os.listdir(os.path.join(
 
 # cog loader
 for cog in cogs:
-    try:
-        client.load_extension(f'cogs.{cog}')
-    except Exception as e:
-        print(f'Could not load cog {cog}: {str(e)}')
-    else:
-        print(f'{cog} cog loaded')
+    if cog == 'testing':
+        try:
+            client.load_extension(f'cogs.{cog}')
+        except Exception as e:
+            print(f'Could not load cog {cog}: {str(e)}')
+        else:
+            print(f'{cog} cog loaded')
 
 
 async def list_guilds():

@@ -1,10 +1,10 @@
 import json
 import os
 import discord
+import random
 from discord.ext import commands
 from PIL import Image, ImageDraw
 from io import BytesIO
-from random import randint
 
 
 class ImgPiece():
@@ -48,6 +48,24 @@ class avatar(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
+    @commands.command(aliases=['testing'], hidden=False)
+    async def test(self, ctx, *, msg=None):
+        message = await ctx.send('Hit the emoji to do something')
+        await message.add_reaction("⏪")
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) == "⏪"
+            # This makes sure nobody except the command sender can interact with the "menu"
+
+        while True:
+            try:
+                reaction, user = await self.client.wait_for("reaction_add", timeout=60.0, check=check)
+            except:
+                return  # Exit Function (Timed Out) due to timeout error
+
+            await ctx.send(f'OK, doing something with your original message: {msg}')
+            return
+
     @commands.command(aliases=['splode'], hidden=False)
     async def explode(self, ctx, *, user=None):
         '''
@@ -78,7 +96,7 @@ class avatar(commands.Cog):
                 img_pieces.append(temp)
 
         number_of_pieces = len(img_pieces)
-        print(f'{number_of_pieces} pieces created')
+        # print(f'{number_of_pieces} pieces created')
 
         folder = os.path.join('./', 'cogs', 'gifs', command_name)
         background = Image.open(os.path.join(folder, 'background.png'))
@@ -146,6 +164,87 @@ class avatar(commands.Cog):
             embed = discord.Embed(title='Avatar', colour=discord.Colour.blue())
             embed.set_image(url=member.avatar_url)
             await ctx.send(embed=embed)
+
+    @commands.command(aliases=['lost'], hidden=False)
+    async def wander(self, ctx, *, user=None):
+        '''
+        Random Wandering of Friend??????
+        Returns gif image using mentioned user
+        '''
+
+        command_name = 'avatar'
+
+        user = await get_guild_member(ctx, user)
+        # make avatar image
+        asset = user.avatar_url_as(static_format='png')
+        data = BytesIO(await asset.read())
+        im = Image.open(data)
+        im = im.resize((500, 500), Image.ANTIALIAS)
+        avatar = im.copy()
+
+        # make individual piece objects
+        background_border = 200
+        img_pieces = []
+        for row in range(5):
+            for col in range(5):
+                x = row*100
+                y = col*100
+                piece_num = row*5+col
+                temp = ImgPiece(piece_num, avatar.crop(
+                    (x, y, x+100, y+100)), (x+background_border, y+background_border))
+                img_pieces.append(temp)
+
+        number_of_pieces = len(img_pieces)
+        # print(f'{number_of_pieces} pieces created')
+
+        folder = os.path.join('./', 'cogs', 'gifs', command_name)
+        background = Image.open(os.path.join(folder, 'background.png'))
+
+        # First frame centered
+        temp = background.copy()
+        temp.paste(avatar, (200, 200))
+        frames = []
+        for _ in range(10):
+            frames.append(temp)
+
+        # shrink to one piece in middle
+        steps = 5
+        for piece in img_pieces:
+            piece.set_destination((400, 400), steps)
+        # Move pieces
+        for _ in range(steps):
+            temp = background.copy()
+            for piece in img_pieces:
+                temp.paste(piece.pic, piece.next_location())
+            frames.append(temp)
+
+        # Move image randomly around frame
+        current_location = (400, 400)
+        for _ in range(25):
+            chosen_piece = random.choice(img_pieces)
+            current_location = get_random_adjacent_grid(current_location)
+            temp = background.copy()
+            temp.paste(chosen_piece.pic, current_location)
+            frames.append(temp)
+
+        # Reassemble picture
+        steps = 5
+        for piece in img_pieces:
+            piece.x, piece.y = current_location
+            piece.set_destination(piece.origin, steps)
+        # Move pieces
+        for _ in range(steps):
+            temp = background.copy()
+            for piece in img_pieces:
+                temp.paste(piece.pic, piece.next_location())
+            frames.append(temp)
+
+        outfile = os.path.join(folder, (f'{ctx.author}.gif'))
+        frames[0].save(outfile, save_all=True, append_images=frames[1:],
+                       optimize=True, duration=200, loop=0, interlace=True, disposal=2)
+        await ctx.send(file=discord.File(outfile))
+        os.remove(outfile)
+        return
 # Helper Functions
 
 
@@ -196,31 +295,23 @@ async def get_guild_member(ctx, user=None):
     return user
 
 
+def get_random_adjacent_grid(location):
+    # based on 900x900 frame and piece size of 100,100
+    available = []
+    if location[0] > 0:
+        available.append((-100, 0))
+    if location[0] < 800:
+        available.append((100, 0))
+    if location[1] > 0:
+        available.append((0, -100))
+    if location[1] < 800:
+        available.append((0, 100))
+
+    adjust = random.choice(available)
+    new_location = (location[0]+adjust[0], location[1]+adjust[1])
+
+    return new_location
+
+
 def setup(client):  # Cog setup command
     client.add_cog(avatar(client))
-
-
-'''
-        destinations = [(0, 0), (0, 800), (800, 0), (800, 800)]
-        for target in destinations:
-            # Set image destinations
-            step_count = 10
-            for num in range(number_of_pieces):
-                img_pieces[num].set_destination(target, step_count)
-            # Move pieces
-            for _ in range(step_count):
-                temp = background.copy()
-                for piece in img_pieces:
-                    temp.paste(piece.pic, piece.next_location())
-                frames.append(temp)
-            # Set destinations back to original locations
-            for num in range(number_of_pieces):
-                img_pieces[num].set_destination(
-                    img_pieces[num].origin, step_count)
-            # Move pieces
-            for _ in range(step_count):
-                temp = background.copy()
-                for piece in img_pieces:
-                    temp.paste(piece.pic, piece.next_location())
-                frames.append(temp)
-'''
