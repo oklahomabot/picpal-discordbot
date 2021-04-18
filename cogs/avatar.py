@@ -48,24 +48,6 @@ class avatar(commands.Cog):
         self.client = client
         self.owner = discord.ClientUser
 
-    @commands.command(aliases=['testing'], hidden=False)
-    async def test(self, ctx, *, msg=None):
-        message = await ctx.send('Hit the emoji to do something')
-        await message.add_reaction("⏪")
-
-        def check(reaction, user):
-            return user == ctx.author and str(reaction.emoji) == "⏪"
-            # This makes sure nobody except the command sender can interact with the "menu"
-
-        while True:
-            try:
-                reaction, user = await self.client.wait_for("reaction_add", timeout=60.0, check=check)
-            except:
-                return  # Exit Function (Timed Out) due to timeout error
-
-            await ctx.send(f'OK, doing something with your original message: {msg}')
-            return
-
     @commands.command(aliases=['splode'], hidden=False)
     async def explode(self, ctx, *, user=None):
         '''
@@ -125,6 +107,7 @@ class avatar(commands.Cog):
 
         # Explode
         steps = 10
+        # Write these to a json file to save space?
         destinations = get_outer_destinations()
         for index, piece in enumerate(img_pieces):
             piece.set_destination(destinations[index], steps)
@@ -165,14 +148,13 @@ class avatar(commands.Cog):
             embed.set_image(url=member.avatar_url)
             await ctx.send(embed=embed)
 
-    @commands.command(aliases=['lost'], hidden=False)
-    async def wander(self, ctx, *, user=None):
+    @commands.command(aliases=['goal'], hidden=False)
+    async def escape(self, ctx, *, user=None):
         '''
-        Random Wandering of Friend??????
-        Returns gif image using mentioned user
+        Feeling lucky? You get 20 moves to reach the goal.
+        Randomly moves you or a friend you mention
+        Returns gif image
         '''
-
-        command_name = 'avatar'
 
         user = await get_guild_member(ctx, user)
         # make avatar image
@@ -194,11 +176,8 @@ class avatar(commands.Cog):
                     (x, y, x+100, y+100)), (x+background_border, y+background_border))
                 img_pieces.append(temp)
 
-        number_of_pieces = len(img_pieces)
-        # print(f'{number_of_pieces} pieces created')
-
-        folder = os.path.join('./', 'cogs', 'gifs', command_name)
-        background = Image.open(os.path.join(folder, 'background.png'))
+        folder = os.path.join('./', 'cogs', 'gifs', 'escape')
+        background = Image.open(os.path.join(folder, 'back_goal.png'))
 
         # First frame centered
         temp = background.copy()
@@ -219,33 +198,49 @@ class avatar(commands.Cog):
             frames.append(temp)
 
         # Move image randomly around frame
+        small_avatar = avatar.resize((100, 100), Image.ANTIALIAS)
+        path_block = Image.new('RGB', (100, 100), (245, 216, 137))
         current_location = (400, 400)
-        for _ in range(25):
-            chosen_piece = random.choice(img_pieces)
+        temp = background.copy()
+        winner = False
+        move_num = 0
+        while move_num < 20 and not winner:
+            move_num += 1
+            temp.paste(path_block, current_location)
             current_location = get_random_adjacent_grid(current_location)
-            temp = background.copy()
-            temp.paste(chosen_piece.pic, current_location)
-            frames.append(temp)
+            temp.paste(small_avatar, current_location)
+            frames.append(temp.copy())
+            winner = True if ((current_location[0] in [0, 800]) or
+                              (current_location[1] in [0, 800])) else False
 
-        # Reassemble picture
-        steps = 5
-        for piece in img_pieces:
-            piece.x, piece.y = current_location
-            piece.set_destination(piece.origin, steps)
-        # Move pieces
-        for _ in range(steps):
-            temp = background.copy()
-            for piece in img_pieces:
-                temp.paste(piece.pic, piece.next_location())
-            frames.append(temp)
+        banner_fn = 'back_winner_900x200.png' if winner else 'back_loser_900x200.png'
+        avatar = avatar.resize((200, 200), Image.ANTIALIAS)
+        avatar = mask_circle(avatar)
+        banner = Image.open(os.path.join(folder, banner_fn))
+        if winner:
+            banner.paste(avatar, (0, 0))
+            banner.paste(avatar, (700, 0))
+        where = (0, 700) if current_location[1] < 500 else (0, 0)
+        temp.paste(banner, where)
+        frames.append(temp)
 
         outfile = os.path.join(folder, (f'{ctx.author}.gif'))
         frames[0].save(outfile, save_all=True, append_images=frames[1:],
-                       optimize=True, duration=200, loop=0, interlace=True, disposal=2)
+                       optimize=True, duration=200, interlace=True, disposal=2)
         await ctx.send(file=discord.File(outfile))
         os.remove(outfile)
         return
 # Helper Functions
+
+
+def mask_circle(im):
+    bigsize = (im.size[0] * 3, im.size[1] * 3)
+    mask = Image.new('L', bigsize, 0)
+    draw = ImageDraw.Draw(mask)
+    draw.ellipse((0, 0) + bigsize, fill=255)
+    mask = mask.resize(im.size, Image.ANTIALIAS)
+    im.putalpha(mask)
+    return im
 
 
 def get_outer_destinations():
