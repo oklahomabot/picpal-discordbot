@@ -22,7 +22,7 @@ class admin(commands.Cog):
     async def botinfo(self, ctx):
         '''General Information about PicPal'''
         embed = discord.Embed(
-            title='🤖Bot Information🤖', colour=discord.Colour.blue(), timestamp=datetime.now(tz=timezone.utc))
+            title='🤖Bot Information🤖', colour=discord.Colour.blue(), timestamp=datetime.utcnow())
 
         embed.set_thumbnail(url=self.client.user.avatar_url)
 
