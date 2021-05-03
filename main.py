@@ -18,7 +18,7 @@ cogs = [fn[:-3] for fn in os.listdir(os.path.join(
 
 # cog loader
 for cog in cogs:
-    if cog in ['testing', 'leveling']:
+    if cog in ['testing']:
         try:
             client.load_extension(f'cogs.{cog}')
         except Exception as e:
@@ -27,23 +27,18 @@ for cog in cogs:
             print(f'{cog} cog loaded')
 
 
-async def list_guilds():
-    temp = ('--- Bot Servers Joined ---\n')
-    count = 0
-    async for guild in client.fetch_guilds(limit=150):
-        count += 1
-        temp = temp+(f'Guild {guild.name} : ({guild.id}) ')
-    temp = temp+(f'\nLogged in to {count} Discord Servers')
-    return temp
+def list_guilds():
+    for g in client.guilds:
+        print(f'{g.name:25} ({g.id}) - {g.member_count} members')
 
 
 @client.event
 async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
+    print(
+        f'We have logged in as {client.user} a member of {len(client.guilds)} guilds')
+    list_guilds()
     await client.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching, name=f'for {prefix} command'))
-    console_msg = await list_guilds()
-    print(console_msg)
 
 
 client.run(dTOKEN)

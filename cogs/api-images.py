@@ -15,6 +15,17 @@ load_dotenv()
 # HELPER FUNCTIONS
 
 
+def get_imgflip_dic_by_rank():
+
+    temp_dic = get_imgflip_dic()
+    new_dic = {}
+    for id in temp_dic.keys():
+        rec = temp_dic[id]
+        rec['template_id'] = id
+        new_dic[f'{temp_dic[id]["rank"]}'] = rec
+    return new_dic
+
+
 def replace_imgflip_dic(my_dic):
     data_path = os.path.join('./', 'cogs', 'gifs',
                              'imgflip', 'imgfliptop100.txt')
@@ -401,6 +412,75 @@ class api_images(commands.Cog):
                 ('Changes in command list will not be effective until next bot restart'))
         await ctx.send(temp)
         return
+
+    @commands.command(aliases=['memepreview', 'preview_meme'])
+    async def meme_preview(self, ctx, fields_per_page: int = 5):
+        '''
+        Example memes to preview them. Find your favorite.
+        '''
+
+        fields_per_page = 1
+
+        imgflip_dic = get_imgflip_dic_by_rank()
+
+        title = 'MEME GENERATOR PREVIEW'
+        desc_end = '[List of Top 100 imgflip memes](https://imgflip.com/popular_meme_ids)'
+
+        total_pages = len(imgflip_dic)
+
+        embed_list = []
+        for rank in range(1, total_pages+1):
+            description = (
+                f"Rank #{imgflip_dic[str(rank)]['rank']} {imgflip_dic[str(rank)]['full_name']}")
+            description = description+'\n'+desc_end
+            short_cmd = min(imgflip_dic[str(rank)]
+                            ['aliases'], key=lambda word: len(word))
+            embed = discord.Embed(title=title, description=description,
+                                  colour=discord.Colour.blue())
+            embed.add_field(name=((f'Ex) \"{self.client.command_prefix}') +
+                                  (f'{short_cmd} text1+text2\"')),
+                            value=(f"commands: {imgflip_dic[str(rank)]['aliases']}"))
+            embed.set_thumbnail(url=ctx.author.avatar_url_as(size=64))
+            embed.set_footer(text=((f'Make meme by typing \"{self.client.command_prefix}') +
+                                   (f'<command> text1+text2\"')), icon_url=self.client.user.avatar_url)
+            embed_list.append(embed)
+
+        current = 1
+        embed_list[0].set_image(url=get_imgflip_url(
+            imgflip_dic[str(current)]['template_id'], 'text1', 'text2'))
+        message = await ctx.send(f"Page {current}/{total_pages}", embed=embed_list[current-1])
+
+        emoji_dic = {"⏪": -1*(total_pages+2)//5, "◀️": -1, "▶️": 1,
+                     "⏩": (total_pages+2)//5, "⏹️": 0}
+        for emoji in emoji_dic.keys():
+            await message.add_reaction(emoji)
+
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in emoji_dic
+            # This makes sure nobody except the command sender can interact with the "menu"
+
+        while True:
+            try:
+                reaction, user = await self.client.wait_for("reaction_add", timeout=60.0, check=check)
+            except:
+                await message.clear_reactions()
+                return  # Exit Function (Timed Out) due to timeout error
+
+            if str(reaction.emoji) == "⏹️":
+                await message.edit(content='Process Stopped! Deleting Message', embed=None)
+                await asyncio.sleep(3)
+                await message.delete()
+                await ctx.message.delete()
+                return
+
+            current += emoji_dic[str(reaction.emoji)]
+            current = 1 if current < 1 else total_pages if current > total_pages else current
+            # Request embed image if not already populated
+            if embed_list[current-1].image.url == discord.Embed.Empty:
+                embed_list[current-1].set_image(url=get_imgflip_url(
+                    imgflip_dic[str(current)]['template_id'], 'text1', 'text2'))
+            await message.edit(content=f"Page {current} of {total_pages}", embed=embed_list[current-1])
+            await message.remove_reaction(reaction, user)
 
 
 def setup(client):  # Cog setup command
