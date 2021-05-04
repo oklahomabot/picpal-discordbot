@@ -7,42 +7,6 @@ from io import BytesIO
 from random import randint
 
 
-class ImgPiece():
-    def __init__(self, piece_num, pic, origin, destination=None):
-        self.piece_num = piece_num
-        self.pic = pic
-        self.origin = origin
-        self.x = origin[0]
-        self.y = origin[1]
-        self.pos_num = 0
-        self.locations = []
-        if not destination:
-            self.destination = origin
-
-    def next_location(self):
-        self.pos_num += 1
-        next = self.locations[self.pos_num]
-        self.x = next[0]
-        self.y = next[1]
-        return next
-
-    def set_destination(self, destination, steps):
-        self.pos_num = 0
-        loc_list = []
-        loc_list.append((self.x, self.y))
-        x = self.x
-        y = self.y
-        x_step_size = ((destination[0]-x)/steps)
-        y_step_size = ((destination[1]-y)/steps)
-        for _ in range(steps-1):
-            x += x_step_size
-            y += y_step_size
-            loc_list.append((int(x), int(y)))
-        loc_list.append(destination)
-        self.locations = loc_list
-        return
-
-
 class custom_images(commands.Cog):
     def __init__(self, client):
         self.client = client
