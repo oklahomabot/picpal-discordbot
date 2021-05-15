@@ -53,7 +53,7 @@ class avatar(commands.Cog):
 
     @staticmethod
     def make_pat_gif(avatar):
-        folder = os.path.join('./', 'cogs', 'pat', 'images')
+        folder = os.path.join('./', 'cogs', 'gifs', 'pat')
         sizex, sizey = 112, 112
         avatar_sizes = [(90, 70), (90, 70), (95, 60), (97, 55),
                         (100, 50), (97, 55), (95, 60), (90, 70)]
