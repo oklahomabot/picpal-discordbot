@@ -76,7 +76,7 @@ class avatar(commands.Cog):
         return outfile
 
     @commands.command(aliases=['pet_pat'], hidden=False)
-    async def pat(self, ctx, user=None):
+    async def pat(self, ctx, *, user=None):
         '''
         Good Boy ...
         Returns gif image using mentioned user
@@ -88,6 +88,7 @@ class avatar(commands.Cog):
         # create partial function so we don't have to stack the args in run_in_executor
         fn = partial(self.make_pat_gif, avatar)
         outfile = await self.client.loop.run_in_executor(None, fn)
+        self.session.close()
         await ctx.send(file=discord.File(outfile))
         os.remove(outfile)
 

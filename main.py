@@ -39,5 +39,5 @@ async def on_ready():
     await client.change_presence(activity=discord.Activity(
         type=discord.ActivityType.watching, name=f'for {prefix} command'))
 
-
-client.run(dTOKEN)
+if __name__ == "__main__":
+    client.run(dTOKEN)
